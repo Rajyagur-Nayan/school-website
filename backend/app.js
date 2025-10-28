@@ -13,7 +13,7 @@ initializeBirthdayScheduler();
 //middlewear
 app.use(
   cors({
-    origin: "http://localhost:3000", // your frontend URL
+    origin: "https://school-management-vert-chi.vercel.app", // your frontend URL
     credentials: true, // allow cookies
   })
 );
