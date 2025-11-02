@@ -57,7 +57,6 @@ export default function LoginPage() {
       if (response.status === 200) {
         localStorage.setItem("user_role", "parent"); // Hard-code role
         toast.success("Login successful!");
-        window.location.href = "/school-info"; // Redirect to home page
       } else {
         const msg =
           "Login successful, but server returned an unexpected status.";
