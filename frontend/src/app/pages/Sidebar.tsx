@@ -29,7 +29,6 @@ import {
   UmbrellaIcon,
   Plus,
 } from "lucide-react";
-// --- MODIFIED: Imported useRouter ---
 import { usePathname, useRouter } from "next/navigation";
 
 // --- Link list for Teachers ---
@@ -120,16 +119,15 @@ const Sidebar = ({
   setIsOpen: (isOpen: boolean) => void;
 }) => {
   const pathname = usePathname();
-  const router = useRouter(); // --- MODIFIED: Initialized router ---
+  const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- MODIFIED: Added redirect logic ---
   useEffect(() => {
     const role = localStorage.getItem("user_role");
     if (!role) {
       // No role found, redirect to login page
-      router.push("/login"); // Assuming '/login' is your login page
+      router.push("/login");
     } else {
       // Role found, set state and continue
       setUserRole(role);
@@ -219,8 +217,8 @@ const Sidebar = ({
     );
   };
 
-  // This loading state is now crucial. It prevents the sidebar from rendering
-  // (and defaulting to 'teacherItems') before the auth check is complete.
+  // This loading state prevents the sidebar from rendering (and defaulting to 'teacherItems')
+  // before the authentication check is complete.
   if (isLoading) {
     return (
       <aside
@@ -262,7 +260,7 @@ const Sidebar = ({
   );
 };
 
-// --- Main AppShell Component (No Change) ---
+// --- Main AppShell Component ---
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -271,14 +269,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/*
-         *
-         * THIS IS THE MOBILE HEADER
-         *
-         */}
+        {/* --- MOBILE HEADER --- */}
         <header
           className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 shadow-md flex items-center justify-between p-4 h-16 border-b dark:border-slate-800
-    
          z-40"
         >
           <Button
@@ -293,7 +286,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="w-10" /> {/* Spacer */}
         </header>
 
-        {/* Main Scrollable Content */}
+        {/* --- Main Scrollable Content --- */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 mt-16 lg:mt-0">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
