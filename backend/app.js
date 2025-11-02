@@ -13,7 +13,10 @@ initializeBirthdayScheduler();
 //middlewear
 app.use(
   cors({
-    origin: "https://school-website-nine-psi.vercel.app", // your frontend URL
+    origin: [
+      "https://school-website-nine-psi.vercel.app",
+      "http://localhost:3000",
+    ], // your frontend URL
     credentials: true, // allow cookies
   })
 );
