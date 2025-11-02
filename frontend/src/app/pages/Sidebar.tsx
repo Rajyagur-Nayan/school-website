@@ -38,7 +38,6 @@ const teacherItems = [
     icon: LayoutDashboard,
     href: "/admin-dashboard",
   },
-
   { title: "Add Student using excel", icon: Users, href: "/add-student" },
   { title: "Student admission", icon: Users, href: "/student-management" },
   { title: "Fee's", icon: IndianRupee, href: "/fee-management" },
@@ -168,7 +167,7 @@ const Sidebar = ({
             >
               <div className="flex items-center">
                 <link.icon className="h-6 w-6" />
-                <span className="ml-3 text-sm font-medium lg:hidden lg:group-hover:inline whitespace-nowrap">
+                <span className="ml-3 text-sm font-medium lg:hidden lg:group-hover:inline whitespace-nowGrap">
                   {link.title}
                 </span>
               </div>
@@ -217,8 +216,6 @@ const Sidebar = ({
     );
   };
 
-  // This loading state prevents the sidebar from rendering (and defaulting to 'teacherItems')
-  // before the authentication check is complete.
   if (isLoading) {
     return (
       <aside
@@ -248,7 +245,7 @@ const Sidebar = ({
         </nav>
       </aside>
 
-      {/* This is the overlay that shows on mobile when the menu is open */}
+      {/* Overlay: z-40 */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -268,11 +265,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-gray-200 overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* --- MOBILE HEADER --- */}
+      {/* --- MODIFIED: Removed 'overflow-hidden' from this div --- */}
+      <div className="flex-1 flex flex-col">
+        {/*
+         *
+         * THIS IS THE MOBILE HEADER
+         * --- MODIFIED: Changed to z-30 ---
+         *
+         */}
         <header
           className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 shadow-md flex items-center justify-between p-4 h-16 border-b dark:border-slate-800
-         z-40"
+    
+         z-30"
         >
           <Button
             variant="ghost"
@@ -286,7 +290,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="w-10" /> {/* Spacer */}
         </header>
 
-        {/* --- Main Scrollable Content --- */}
+        {/* Main Scrollable Content
+          This 'main' element will now scroll properly, and the 'mt-16'
+          will push its content below the fixed mobile header.
+        */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 mt-16 lg:mt-0">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
