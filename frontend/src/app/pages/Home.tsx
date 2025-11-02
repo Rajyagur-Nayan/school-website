@@ -1,7 +1,8 @@
 "use client"; // Required because DashboardCard uses a Link and is interactive
 
-// --- Added useState and useEffect ---
+// --- Modified imports: Added useRouter ---
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // <-- MODIFIED: 1. Import useRouter
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import React from "react";
@@ -25,7 +26,7 @@ import {
   Plus,
 } from "lucide-react";
 
-// --- DashboardCard Component Definition ---
+// --- DashboardCard Component Definition (No Change) ---
 interface DashboardCardProps {
   title: string;
   icon: React.ElementType; // Type for Lucide icons
@@ -44,10 +45,9 @@ function DashboardCard({ title, icon: Icon, href }: DashboardCardProps) {
     </Link>
   );
 }
-
 // --- End of DashboardCard Definition ---
 
-// --- Defined item lists based on role ---
+// --- Defined item lists based on role (No Change) ---
 const parentItems = [
   {
     title: "Student Dashboard",
@@ -132,17 +132,25 @@ const teacherItems = [
 ];
 
 export default function HomePage() {
-  // --- State to hold the user's role ---
+  const router = useRouter(); // <-- MODIFIED: 2. Initialize router
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- useEffect to safely access localStorage on the client ---
+  // --- useEffect to safely access localStorage and protect route ---
   useEffect(() => {
     // This code runs only in the browser
     const role = localStorage.getItem("user_role");
-    setUserRole(role);
-    setIsLoading(false);
-  }, []); // Empty array ensures this runs only once on mount
+
+    // <-- MODIFIED: 3. Add redirect logic -->
+    if (!role) {
+      // No role found, redirect to login
+      router.push("/login");
+    } else {
+      // Role found, set state and show dashboard
+      setUserRole(role);
+      setIsLoading(false);
+    }
+  }, [router]); // Added router as a dependency
 
   // --- Determine which items to display ---
   const itemsToDisplay =
@@ -152,19 +160,29 @@ export default function HomePage() {
       ? teacherItems
       : []; // Default to empty array if no role matches
 
-  return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
-      <main className="flex-grow container mx-auto p-8">
-        {/* --- Conditional Rendering based on loading and role --- */}
-        {isLoading ? (
+  // --- Conditional Rendering based on loading and role ---
+  // --- This now also acts as a loading screen during the auth check ---
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
+        <main className="flex-grow container mx-auto p-8">
           <div className="text-center text-gray-700 dark:text-white">
             Loading dashboard...
           </div>
-        ) : itemsToDisplay.length > 0 ? (
+        </main>
+      </div>
+    );
+  }
+
+  // --- This part only renders if isLoading is false AND a role was found ---
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
+      <main className="flex-grow container mx-auto p-8">
+        {itemsToDisplay.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
             {itemsToDisplay.map((item) => (
               <DashboardCard
-                key={item.href} // <-- FIX: Use unique href for key
+                key={item.href}
                 title={item.title}
                 icon={item.icon}
                 href={item.href}
