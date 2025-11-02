@@ -167,12 +167,21 @@ export function Navbar() {
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
 
-            {/* --- Display logic (No Change) --- */}
-            {isAuthenticated && userRole == "teacher" ? (
-              <UserNav />
-            ) : (
-              <TeacherNav />
-            )}
+            {/* --- CORRECTED Display Logic --- */}
+            {
+              // Case 1: A "student" is logged in (using useAuth context)
+              isAuthenticated && user ? (
+                <UserNav />
+              ) : // Case 2: A "teacher" is logged in (using local state)
+              userRole === "teacher" && teacherToken ? (
+                <TeacherNav />
+              ) : // Case 3: No one is logged in (show nothing)
+              userRole === "parent" && teacherToken ? (
+                <TeacherNav />
+              ) : null
+              // This is where you would put your <LoginDialog />
+              // and <RegisterDialog /> buttons if you add them back
+            }
           </div>
         </div>
       </header>

@@ -1,847 +1,525 @@
 "use client";
 
-// --- 1. IMPORTS ---
-import { useRef, type ReactNode, type ReactElement, type FC } from "react";
+// --- React and Next.js Imports ---
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+
+// --- Animation (GSAP) Imports ---
 import { gsap } from "gsap";
-import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { TextPlugin } from "gsap/TextPlugin";
+
+// --- Theme (Dark Mode) Import ---
+import { useTheme } from "next-themes";
+
+// --- Icon Imports ---
+import {
+  Sun,
+  Moon,
+  Facebook,
+  Twitter,
+  Instagram,
+  Phone,
+  Mail,
+  MapPin,
+} from "lucide-react";
+
+// --- shadcn/ui Component Imports ---
+// (Make sure you have run `npx shadcn-ui@latest add button` and `add card`)
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-  MonitorPlay,
-  ShieldCheck,
-  Trophy,
-  Users,
-  Library,
-  CalendarDays,
-  Linkedin,
-  Twitter,
-  Quote,
-  Eye,
-  Beaker,
-} from "lucide-react";
 
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+// --- Register GSAP Plugins ---
+gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-// --- 2. HERO COMPONENT ---
-// (This section was correct, no changes)
-const Hero: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      gsap.from(".hero-title", {
-        opacity: 0,
-        y: 50,
-        scale: 1.1,
-        filter: "blur(5px)",
-        duration: 1,
-        ease: "power3.out",
-      });
-      gsap.from(".hero-subtitle", {
-        opacity: 0,
-        y: 40,
-        duration: 1,
-        delay: 0.3,
-        ease: "power3.out",
-      });
-      gsap.from(".hero-buttons", {
-        opacity: 0,
-        y: 30,
-        duration: 1,
-        delay: 0.5,
-        ease: "power3.out",
-      });
-    },
-    { scope: container }
-  );
-  return (
-    <section
-      ref={container}
-      className="relative grid grid-cols-1 grid-rows-1 items-center justify-center min-h-screen text-center text-white overflow-hidden"
+// --- Image Assets ---
+// (All paths now consistently in /images/)
+const heroBg = "/images/smv8.jpg"; // The beautiful illustration
+const principalImg = "/images/smv2.jpg"; // Group photo with flag
+const galleryImages = [
+  { src: "/images/smv1.jpg", alt: "Student receiving award on Sports Day" },
+  { src: "/images/smv3.jpg", alt: "Students in classical dance attire" },
+  { src: "/images/smv4.jpg", alt: "School staff receiving memento" },
+  { src: "/images/smv5.jpg", alt: "Student receiving prize from guest" },
+  {
+    src: "/images/smv9.jpg", // Using your provided smv9.jpg
+    alt: "Girl receiving award at school event",
+  },
+  {
+    src: "/images/smv7.jpg",
+    alt: "Amrutba Highschool building with Indian flag",
+  },
+];
+
+/**
+ * Loader Component
+ */
+const Loader = () => (
+  <div className="loader-bg fixed inset-0 z-50 flex h-screen w-screen items-center justify-center bg-white dark:bg-gray-950">
+    <h1
+      className="loader-text text-4xl sm:text-5xl font-bold tracking-widest text-gray-900 dark:text-gray-100"
+      aria-label="SMV"
     >
-      <div className="col-start-1 row-start-1">
-        <Image
-          src="/images/smv8.jpg"
-          alt="Sharda Mandir Vidhyalaya Campus"
-          fill
-          priority
-          className="object-cover object-center"
-          sizes="100vw"
-        />
-      </div>
-      <div className="col-start-1 row-start-1 bg-gradient-to-b from-black/40 via-black/60 to-black/80" />
-      <div className="relative z-10 col-start-1 row-start-1 container mx-auto px-6 flex flex-col items-center gap-8">
-        <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight drop-shadow-2xl">
-          Sharda Mandir Vidhyalaya
-        </h1>
-        <p className="hero-subtitle text-lg sm:text-xl lg:text-2xl text-gray-200 max-w-3xl leading-relaxed">
-          Empowering young minds with values, culture, and academic excellence —
-          nurturing leaders for tomorrow.
-        </p>
-        <div className="hero-buttons flex flex-wrap justify-center gap-6">
-          <Button size="lg" asChild>
-            <Link href="#admissions">Admissions Open</Link>
-          </Button>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="#welcome">Learn More</Link>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-};
+      {["S", "M", "V"].map((char, index) => (
+        <span
+          key={index}
+          className="loader-text-char inline-block translate-y-10 opacity-0"
+          style={{ animationDelay: `${index * 0.1}s` }}
+        >
+          {char}
+        </span>
+      ))}
+    </h1>
+  </div>
+);
 
-// --- 3. WELCOME/ABOUT SECTION ---
-// (This section was correct, no changes)
-const Welcome: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      gsap.from(".welcome-content", {
-        scrollTrigger: { trigger: container.current, start: "top 80%" },
-        opacity: 0,
-        x: -50,
-        duration: 1,
-        ease: "power3.out",
-      });
-      gsap.to(".welcome-image-inner", {
-        yPercent: 20,
-        ease: "none",
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
-    },
-    { scope: container }
-  );
+/**
+ * ThemeToggle Component
+ */
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <div className="fixed top-4 right-4 z-40 h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-800" />
+    );
+  }
+
   return (
-    <section id="welcome" ref={container} className="py-20 md:py-32 bg-muted">
-      <div className="container grid lg:grid-cols-2 gap-12 items-center">
-        <div className="welcome-image relative w-full h-80 lg:h-[450px] rounded-xl overflow-hidden shadow-2xl">
-          <div className="welcome-image-inner absolute inset-0 -top-[25%] h-[125%] w-full">
-            <Image
-              src="/images/smv4.jpg"
-              alt="SMV Staff Community"
-              layout="fill"
-              objectFit="cover"
-              className="rounded-md"
-            />
-          </div>
-        </div>
-        <div className="welcome-content flex flex-col gap-4 items-start">
-          <p className="font-semibold text-primary tracking-wide uppercase">
-            About Our School
-          </p>
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Welcome to Our Community
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            Sharda Mandir Vidhyalaya is more than just a school; it&apos;s a
-            community of students, parents, and dedicated staff. We work
-            together to create a supportive and engaging environment where
-            everyone feels a sense of belonging.
-          </p>
-          <Button size="lg" asChild>
-            <Link href="#">About Our Mission</Link>
-          </Button>
-        </div>
-      </div>
-    </section>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="fixed top-4 right-4 z-40 rounded-full bg-white/50 shadow-md backdrop-blur-sm transition-all hover:bg-white/80 dark:bg-gray-800/50 dark:hover:bg-gray-700/80"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      aria-label="Toggle theme"
+    >
+      {theme === "dark" ? (
+        <Sun className="h-5 w-5 text-yellow-400" />
+      ) : (
+        <Moon className="h-5 w-5 text-blue-600" />
+      )}
+    </Button>
   );
 };
 
-// --- 4. WHY CHOOSE US (FIXED) ---
-interface IFeature {
-  icon: ReactNode;
-  title: string;
-  desc: string;
-}
-const WhyChooseUs: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      // --- FIX: Changed from gsap.from() to gsap.to() ---
-      gsap.to(".feature-card", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
-        opacity: 1, // Animate TO opacity 1
+/**
+ * Main About Page Component
+ */
+export default function AboutPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  // --- Animation Refs ---
+  const heroRef = useRef(null);
+  const heroImageRef = useRef(null);
+  const missionRef = useRef(null);
+  const visionRef = useRef(null);
+  const galleryRef = useRef(null);
+  const principalSectionRef = useRef(null);
+  const principalImageRef = useRef(null);
+  const principalTextRef = useRef(null);
+  const principalMessageTextRef = useRef(null);
+
+  const principalMessage =
+    "Welcome to SMV School! Our vision is to create a safe, nurturing, and challenging environment where every student can achieve their full potential. We are committed to fostering academic excellence, creativity, and a lifelong love for learning. Our dedicated staff works tirelessly to support each child's unique journey. We believe in building strong character and responsible citizens for the future.";
+
+  // --- Loader Animation Effect ---
+  useEffect(() => {
+    const loaderTl = gsap.timeline({
+      onComplete: () => {
+        // No timeout needed, just set loading to false
+        setIsLoading(false);
+      },
+    });
+
+    loaderTl
+      .to(".loader-text-char", {
         y: 0,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: "power3.out",
-      });
-    },
-    { scope: container }
-  );
-
-  const features: IFeature[] = [
-    {
-      icon: <Trophy className="w-8 h-8 text-primary" />,
-      title: "Student Achievement",
-      desc: "Celebrating academic and co-curricular excellence in all students.",
-    },
-    {
-      icon: <ShieldCheck className="w-8 h-8 text-primary" />,
-      title: "Values & Culture",
-      desc: "Instilling strong cultural and national values through arts and ethics.",
-    },
-    {
-      icon: <Users className="w-8 h-8 text-primary" />,
-      title: "Qualified Faculty",
-      desc: "Our experienced and dedicated staff are mentors for every child.",
-    },
-  ];
-
-  return (
-    <section ref={container} className="py-20 md:py-32">
-      <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Why Choose SMV?
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            We provide a holistic education that goes beyond textbooks.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              // --- FIX: Added opacity-0 and initial transform states ---
-              className="feature-card p-6 flex flex-col items-start text-left bg-muted/50 rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 opacity-0 translate-y-12 scale-90"
-            >
-              <div className="bg-primary/10 p-3 rounded-lg mb-4">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground">{feature.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// --- 5. OUR PROGRAMS (FIXED) ---
-interface IProgram {
-  title: string;
-  description: string;
-  image: string;
-}
-const Programs: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      // --- FIX: Changed from gsap.from() to gsap.to() ---
-      gsap.to(".program-card", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
         opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.2,
+        stagger: 0.1,
+        ease: "power3.out",
+        duration: 0.6,
+      })
+      .to(".loader-text", {
+        opacity: 0,
+        y: -20,
+        delay: 1.2,
+        ease: "power2.in",
+      })
+      .to(".loader-bg", {
+        scaleY: 0,
+        transformOrigin: "top",
+        ease: "power3.inOut",
+        duration: 1,
       });
-    },
-    { scope: container }
-  );
+  }, []);
 
-  const programs: IProgram[] = [
-    {
-      title: "Core Academics",
-      description: "Rigorous curriculum for Science, Maths, and Humanities.",
-      image: "/images/smv school.jpg",
-    },
-    {
-      title: "Cultural Arts",
-      description: "Explore classical dance, music, and visual arts.",
-      image: "/images/smv9.jpg",
-    },
-    {
-      title: "Sports & Athletics",
-      description: "Physical education and competitive team sports.",
-      image: "/images/smv1.jpg",
-    },
-  ];
-
-  return (
-    <section ref={container} className="py-20 md:py-32 bg-muted">
-      <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Programs</h2>
-          <p className="text-lg text-muted-foreground">
-            A balanced approach to academic, artistic, and physical development.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {programs.map((program) => (
-            <Card
-              key={program.title}
-              // --- FIX: Added opacity-0 and initial transform states ---
-              className="program-card overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 opacity-0 translate-y-12 scale-95"
-            >
-              <CardHeader className="p-0">
-                <div className="relative h-64 w-full">
-                  <Image
-                    src={program.image}
-                    alt={program.title}
-                    layout="fill"
-                    objectFit="cover"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <CardTitle className="mb-2">{program.title}</CardTitle>
-                <p className="text-muted-foreground">{program.description}</p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" asChild>
-                  <Link href="#">Learn More</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// --- 6. FACILITIES ---
-// (This section was correct, no changes)
-interface IFacility {
-  title: string;
-  desc: string;
-  icon: ReactNode;
-  image: string;
-}
-const Facilities: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      gsap.utils.toArray(".facility-card").forEach((card, index) => {
-        gsap.from(card as HTMLElement, {
-          scrollTrigger: { trigger: card as HTMLElement, start: "top 80%" },
-          opacity: 0,
-          x: index % 2 === 0 ? -50 : 50, // Slide from left, then right
-          duration: 1,
+  // --- Main Content Animations Effect ---
+  useEffect(() => {
+    if (!isLoading && mainRef.current) {
+      const ctx = gsap.context(() => {
+        // --- 0. Fade in Main Container (THE FIX) ---
+        // This ensures the page doesn't "pop" in before animations
+        gsap.to(mainRef.current, {
+          opacity: 1,
+          duration: 0.8,
+          ease: "power3.inOut",
         });
-      });
-    },
-    { scope: container }
-  );
-  const facilities: IFacility[] = [
-    {
-      title: "Computer Lab",
-      desc: "Equipped with modern systems to enhance digital literacy.",
-      icon: <MonitorPlay className="w-8 h-8 text-primary" />,
-      image: "/images/smv5.jpg",
-    },
-    {
-      title: "Library",
-      desc: "A quiet space for students to read, research, and expand their minds.",
-      icon: <Library className="w-8 h-8 text-primary" />,
-      image: "/images/smv9.jpg",
-    },
-    {
-      title: "Science Lab",
-      desc: "Hands-on experiments in a state-of-the-art laboratory.",
-      icon: <Beaker className="w-8 h-8 text-primary" />,
-      image: "/images/smv school.jpg",
-    },
-  ];
-  return (
-    <section ref={container} className="py-20 md:py-32">
-      <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Modern Facilities
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            An environment built for effective learning and growth.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-2 gap-8">
-          {facilities.map((facility) => (
-            <Card
-              key={facility.title}
-              className="facility-card shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2"
-            >
-              <div className="relative h-64 md:h-auto w-full">
-                <Image
-                  src={facility.image}
-                  alt={facility.title}
-                  layout="fill"
-                  objectFit="cover"
-                />
-              </div>
-              <div className="flex flex-col justify-center p-6">
-                {facility.icon}
-                <CardTitle className="mt-4 mb-2">{facility.title}</CardTitle>
-                <p className="text-muted-foreground">{facility.desc}</p>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
 
-// --- 7. NEWS & EVENTS (FIXED) ---
-interface IEvent {
-  title: string;
-  description: string;
-  date: string;
-  image: string;
-}
-const Events: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      // --- FIX: Changed from gsap.from() to gsap.to() ---
-      gsap.to(".event-card", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.2,
-      });
-    },
-    { scope: container }
-  );
+        // --- 1. Hero Animation (Fade-in & Parallax) ---
+        gsap.from(".hero-text", {
+          opacity: 0,
+          y: 30,
+          stagger: 0.2,
+          duration: 1,
+          ease: "power3.out",
+          delay: 0.5, // Delay to let main container fade in
+        });
 
-  const events: IEvent[] = [
-    {
-      title: "Annual Sports Day",
-      description:
-        "Join us for a day of thrilling athletic competition and teamwork.",
-      date: "DEC 22, 2025",
-      image: "/images/smv1.jpg",
-    },
-    {
-      title: "Science Fair 2025",
-      description:
-        "Discover the innovative projects from our bright young scientists.",
-      date: "NOV 15, 2025",
-      image: "/images/smv5.jpg",
-    },
-    {
-      title: "Cultural Fest 'Utsav'",
-      description:
-        "A celebration of dance, music, and art by our talented students.",
-      date: "OCT 30, 2025",
-      image: "/images/smv3.jpg",
-    },
-  ];
+        gsap.from(heroImageRef.current, {
+          scale: 1.1,
+          opacity: 0,
+          duration: 1.5,
+          ease: "power3.out",
+          delay: 0.2, // Start this slightly earlier
+        });
 
-  return (
-    <section ref={container} className="py-20 md:py-32 bg-muted">
-      <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">News & Events</h2>
-          <p className="text-lg text-muted-foreground">
-            Stay updated with the latest happenings at Sharda Mandir Vidhyalaya.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {events.map((event) => (
-            <Card
-              key={event.title}
-              // --- FIX: Added opacity-0 and initial transform states ---
-              className="event-card overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 opacity-0 translate-y-12 scale-95"
-            >
-              <CardHeader className="p-0 relative">
-                <Badge className="absolute top-4 left-4 z-10 flex items-center gap-1.5">
-                  <CalendarDays className="w-4 h-4" />
-                  <span>{event.date}</span>
-                </Badge>
-                <div className="relative h-64 w-full">
-                  <Image
-                    src={event.image}
-                    alt={event.title}
-                    layout="fill"
-                    objectFit="cover"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <CardTitle className="mb-2">{event.title}</CardTitle>
-                <p className="text-muted-foreground">{event.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// --- 8. STAFF SECTION (FIXED) ---
-interface IStaffMember {
-  name: string;
-  role: string;
-  qualification: string;
-  initials: string;
-}
-const Staff: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      // --- FIX: Changed from gsap.from() to gsap.to() ---
-      gsap.to(".staff-card", {
-        scrollTrigger: { trigger: container.current, start: "top 80%" },
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.15,
-      });
-    },
-    { scope: container }
-  );
-
-  const staffMembers: IStaffMember[] = [
-    {
-      name: "Mr. R. Sharma",
-      role: "Principal",
-      qualification: "M.Sc, M.Ed",
-      initials: "RS",
-    },
-    {
-      name: "Mrs. S. Patel",
-      role: "Vice-Principal",
-      qualification: "M.A, B.Ed",
-      initials: "SP",
-    },
-    {
-      name: "Mr. A. Khan",
-      role: "Head, Science Dept.",
-      qualification: "M.Sc (Physics)",
-      initials: "AK",
-    },
-    {
-      name: "Ms. P. Desai",
-      role: "Head, Arts & Culture",
-      qualification: "M.A (Fine Arts)",
-      initials: "PD",
-    },
-  ];
-
-  return (
-    <section ref={container} className="py-20 md:py-32">
-      <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Our Highly Qualified Staff
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            Our teachers are the heart of SMV, bringing passion and expertise.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {staffMembers.map((staff) => (
-            <Card
-              key={staff.name}
-              // --- FIX: Added opacity-0 and initial transform states ---
-              className="staff-card text-center shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/20 opacity-0 translate-y-12 scale-90"
-            >
-              <CardContent className="p-6 flex flex-col items-center">
-                <Avatar className="w-24 h-24 mb-4">
-                  <AvatarFallback className="text-3xl">
-                    {staff.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <CardTitle className="text-lg">{staff.name}</CardTitle>
-                <p className="text-primary font-medium">{staff.role}</p>
-                <p className="text-muted-foreground text-sm mt-2">
-                  {staff.qualification}
-                </p>
-                <div className="flex gap-4 mt-4">
-                  <Link
-                    href="#"
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </Link>
-                  <Link
-                    href="#"
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// --- 9. GALLERY ---
-// (This section was correct, no changes)
-const Gallery: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      gsap.from(".gallery-item", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
-        opacity: 0,
-        scale: 0.8,
-        filter: "blur(10px)",
-        duration: 0.8,
-        stagger: 0.15,
-        ease: "power3.out",
-      });
-    },
-    { scope: container }
-  );
-  const images = [
-    {
-      src: "/images/smv6.jpg",
-      alt: "SMV Gallery Image 1",
-      className: "md:col-span-2 md:row-span-2",
-    },
-    {
-      src: "/images/smv 3.jpg",
-      alt: "SMV Gallery Image 2",
-      className: "md:col-span-1 md:row-span-1",
-    },
-    {
-      src: "/images/smv school.jpg",
-      alt: "SMV Gallery Image 3",
-      className: "md:col-span-1 md:row-span-1",
-    },
-    {
-      src: "/images/smv1.jpg",
-      alt: "SMV Gallery Image 4",
-      className: "md:col-span-1 md:row-span-1",
-    },
-  ];
-  return (
-    <section ref={container} className="py-20 md:py-32 bg-muted">
-      <div className="container">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            GlimpsES of SMV
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            A snapshot of our vibrant campus life and student activities.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 grid-flow-dense grid-auto-rows-[300px]">
-          {images.map((img) => (
-            <div
-              key={img.src}
-              className={`gallery-item ${img.className} relative min-h-[300px] rounded-lg overflow-hidden shadow-lg group bg-muted/60`}
-            >
-              <Image
-                src={img.src}
-                alt={img.alt}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300">
-                <Eye className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="text-center mt-12">
-          <Button variant="outline" size="lg" asChild>
-            <Link href="#">View Full Gallery</Link>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// --- 10. TESTIMONIALS ---
-// (This section was correct, no changes)
-interface ITestimonial {
-  quote: string;
-  name: string;
-  role: string;
-}
-const Testimonials: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      gsap.from(".testimonial-card", {
-        scrollTrigger: { trigger: container.current, start: "top 80%" },
-        opacity: 0,
-        y: 50,
-        duration: 1,
-        stagger: 0.2,
-      });
-      gsap.utils.toArray(".testimonial-card").forEach((card, index) => {
-        gsap.to(card as HTMLElement, {
-          y: index % 2 === 0 ? -100 : -50,
+        gsap.to(heroImageRef.current, {
+          yPercent: 25,
           ease: "none",
           scrollTrigger: {
-            trigger: container.current,
-            scrub: 1,
-            start: "top 80%",
-            end: "bottom 70%",
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
           },
         });
-      });
-    },
-    { scope: container }
-  );
-  const testimonials: ITestimonial[] = [
-    {
-      quote:
-        "SMV has been a second home for my child. The focus on both values and academics is exactly what we were looking for. We've seen tremendous growth.",
-      name: "A. Sharma",
-      role: "Parent, Std. 7",
-    },
-    {
-      quote:
-        "The teachers are incredibly supportive. The school's environment is safe, disciplined, and encourages kids to participate in all activities, not just studies.",
-      name: "R. Patel",
-      role: "Parent, Std. 9",
-    },
-    {
-      quote:
-        "The cultural programs are outstanding. My daughter has found her passion for dance here.",
-      name: "S. Iyer",
-      role: "Parent, Std. 5",
-    },
-  ];
-  return (
-    <section ref={container} className="py-20 md:py-32">
-      <div className="container">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          What Our Parents Say
-        </h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          {testimonials.map((item) => (
-            <Card
-              key={item.name}
-              className="testimonial-card flex flex-col shadow-xl bg-muted/50"
-            >
-              <CardHeader>
-                <Quote className="w-10 h-10 text-primary/30 mb-4" />
-                <blockquote className="text-2xl font-light leading-relaxed text-foreground">
-                  &ldquo;{item.quote}&rdquo;
-                </blockquote>
-              </CardHeader>
-              <CardContent className="flex-grow"></CardContent>
-              <CardFooter>
-                <p className="font-semibold text-foreground">
-                  {item.name}
-                  <span className="text-muted-foreground font-normal">
-                    , {item.role}
-                  </span>
-                </p>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
 
-// --- 11. ADMISSIONS CTA ---
-// (This section was correct, no changes)
-const AdmissionsCTA: FC = () => {
-  const container = useRef<HTMLElement | null>(null);
-  useGSAP(
-    () => {
-      gsap.from(".cta-content", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
-        opacity: 0,
-        y: 30,
-        scale: 0.9,
-        duration: 0.8,
-        stagger: 0.2,
-      });
-    },
-    { scope: container }
-  );
+        // --- 2. Mission/Vision Cards (Slide-in) ---
+        gsap.from([missionRef.current, visionRef.current], {
+          opacity: 0,
+          y: 100,
+          duration: 0.8,
+          stagger: 0.2,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: missionRef.current,
+            start: "top 85%",
+            toggleActions: "play none none reverse",
+          },
+        });
+
+        // --- 3. Gallery (Fade-in & Scale-up) ---
+        gsap.from(".gallery-item", {
+          opacity: 0,
+          scale: 0.8,
+          y: 50,
+          stagger: 0.1,
+          duration: 0.6,
+          ease: "back.out(1.7)",
+          scrollTrigger: {
+            trigger: galleryRef.current,
+            start: "top 85%",
+          },
+        });
+
+        // --- 4. Principal's Message (Slide-in & Typewriter) ---
+        gsap.from(principalImageRef.current, {
+          opacity: 0,
+          x: -100,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: principalSectionRef.current,
+            start: "top 80%",
+          },
+        });
+
+        gsap.from(principalTextRef.current, {
+          opacity: 0,
+          x: 100,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: principalSectionRef.current,
+            start: "top 80%",
+          },
+        });
+
+        gsap.to(principalMessageTextRef.current, {
+          text: principalMessage,
+          duration: 5,
+          ease: "none",
+          scrollTrigger: {
+            trigger: principalSectionRef.current,
+            start: "top 70%",
+            toggleActions: "play none none none",
+          },
+        });
+      }, mainRef);
+
+      return () => ctx.revert();
+    }
+  }, [isLoading, principalMessage]);
+
   return (
-    <section
-      id="admissions"
-      ref={container}
-      className="py-20 md:py-32 bg-primary text-primary-foreground"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg1px, transparent 1px)",
-        backgroundSize: "20px 20px",
-      }}
-    >
-      <div className="container text-center flex flex-col items-center gap-6">
-        <h2 className="cta-content text-3xl md:text-4xl font-bold">
-          Join the SMV Family
-        </h2>
-        <p className="cta-content text-lg max-w-2xl text-primary-foreground/90">
-          We are now accepting applications. Take the first step towards a
-          bright and well-rounded future for your child.
-        </p>
-        <Button
-          size="lg"
-          variant="secondary"
-          asChild
-          className="cta-content text-lg"
+    <>
+      {isLoading && <Loader />}
+
+      {/* Main Content Area */}
+      <div
+        ref={mainRef}
+        // MODIFIED: No more opacity transition class, GSAP handles it
+        className={`relative bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 ${
+          isLoading ? "opacity-0" : "" // Stays opacity-0 until GSAP fades it in
+        }`}
+      >
+        <ThemeToggle />
+
+        {/* === 1. Hero Section === */}
+        <header
+          ref={heroRef}
+          className="relative h-screen w-full overflow-hidden"
         >
-          <Link href="/apply-now">Apply for Admission</Link>
-        </Button>
-      </div>
-    </section>
-  );
-};
+          <div ref={heroImageRef} className="absolute inset-0">
+            <Image
+              src={heroBg}
+              alt="SMV School Illustration"
+              layout="fill"
+              objectFit="cover"
+              quality={100}
+              priority
+            />
+            <div className="absolute inset-0 bg-black/40 dark:bg-black/60" />
+          </div>
 
-// --- 12. MAIN PAGE COMPONENT ---
-// (This section was correct, no changes)
-export default function Home(): ReactElement {
-  return (
-    <main className="bg-background text-foreground">
-      <Hero />
-      <Welcome />
-      <WhyChooseUs />
-      <Programs />
-      <Facilities />
-      <Events />
-      <Staff />
-      <Gallery />
-      <Testimonials />
-      <AdmissionsCTA />
-    </main>
+          <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white px-4">
+            <h1
+              className="hero-text text-5xl md:text-7xl font-extrabold tracking-tight"
+              style={{ textShadow: "2px 2px 8px rgba(0,0,0,0.7)" }}
+            >
+              Welcome to SMV School
+            </h1>
+            <p
+              className="hero-text mt-4 text-xl md:text-2xl"
+              style={{ textShadow: "1px 1px 4px rgba(0,0,0,0.7)" }}
+            >
+              Nurturing Minds, Building Futures.
+            </p>
+            <Button
+              size="lg"
+              className="hero-text mt-8 rounded-full text-lg shadow-lg bg-white text-gray-900 hover:bg-gray-200 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+            >
+              Admissions Open
+            </Button>
+          </div>
+        </header>
+
+        {/* === 2. Mission & Vision Section === */}
+        <section className="py-20 lg:py-24 bg-white dark:bg-gray-900">
+          <div className="container mx-auto max-w-5xl px-4">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+              {/* Mission Card */}
+              <Card
+                ref={missionRef}
+                className="shadow-xl dark:bg-gray-800 border-t-4 border-blue-500"
+              >
+                <CardHeader>
+                  <CardTitle className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    Our Mission
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg text-gray-700 dark:text-gray-300">
+                    To provide a holistic education that fosters intellectual
+                    curiosity, critical thinking, and a compassionate spirit,
+                    empowering students to become responsible global citizens.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Vision Card */}
+              <Card
+                ref={visionRef}
+                className="shadow-xl dark:bg-gray-800 border-t-4 border-green-500"
+              >
+                <CardHeader>
+                  <CardTitle className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    Our Vision
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg text-gray-700 dark:text-gray-300">
+                    To be a leading educational institution recognized for its
+                    academic excellence, innovative learning environment, and
+                    commitment to the all-around development of every child.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* === 3. Gallery Section === */}
+        <section
+          ref={galleryRef}
+          className="bg-gray-100 dark:bg-gray-950 py-20 lg:py-24"
+        >
+          <div className="container mx-auto max-w-6xl px-4">
+            <h2 className="mb-12 text-center text-4xl font-bold">
+              Campus Life & Activities
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {galleryImages.map((img, index) => (
+                <div
+                  key={index}
+                  className="gallery-item group relative h-72 overflow-hidden rounded-lg shadow-lg"
+                >
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    layout="fill"
+                    objectFit="cover"
+                    className="transition-transform duration-500 ease-in-out group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <p className="absolute bottom-4 left-4 text-white text-lg font-semibold opacity-0 transition-all duration-500 group-hover:opacity-100">
+                    {img.alt}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* === 4. Principal's Message Section === */}
+        <section
+          ref={principalSectionRef}
+          className="py-20 lg:py-24 bg-white dark:bg-gray-900 overflow-x-hidden"
+        >
+          <div className="container mx-auto max-w-6xl px-4">
+            <h2 className="mb-12 text-center text-4xl font-bold">
+              A Word From Our Principal
+            </h2>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-12 items-center">
+              {/* Principal Image */}
+              <div
+                ref={principalImageRef}
+                className="md:col-span-4 lg:col-span-5"
+              >
+                <div className="relative h-80 w-full md:h-96 overflow-hidden rounded-lg shadow-2xl">
+                  <Image
+                    src={principalImg}
+                    alt="Principal of SMV School"
+                    layout="fill"
+                    objectFit="cover"
+                    objectPosition="right 30%"
+                  />
+                </div>
+              </div>
+
+              {/* Principal Text */}
+              <div
+                ref={principalTextRef}
+                className="md:col-span-8 lg:col-span-7"
+              >
+                <Card className="shadow-xl dark:bg-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-3xl">
+                      [Principal&apos;s Name]
+                    </CardTitle>
+                    <CardDescription className="text-lg text-gray-600 dark:text-gray-400">
+                      Principal, SMV School
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p
+                      ref={principalMessageTextRef}
+                      className="h-48 text-lg text-gray-700 dark:text-gray-300 leading-relaxed"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* === 5. Footer (ADDED) === */}
+        <footer className="bg-gray-100 dark:bg-gray-950 text-gray-700 dark:text-gray-300 py-12">
+          <div className="container mx-auto max-w-6xl px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Column 1: School Info */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                SMV School
+              </h3>
+              <p>Nurturing Minds, Building Futures.</p>
+              <p className="mt-2 text-sm">
+                © {new Date().getFullYear()} SMV School. All rights reserved.
+              </p>
+            </div>
+
+            {/* Column 2: Contact Details */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Contact Us
+              </h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2 transition-colors hover:text-blue-500">
+                  <MapPin className="h-5 w-5 flex-shrink-0" />
+                  <span>123 School Lane, Dwarka, Gujarat</span>
+                </li>
+                <li className="flex items-center gap-2 transition-colors hover:text-blue-500">
+                  <Phone className="h-5 w-5 flex-shrink-0" />
+                  <span>+91 12345 67890</span>
+                </li>
+                <li className="flex items-center gap-2 transition-colors hover:text-blue-500">
+                  <Mail className="h-5 w-5 flex-shrink-0" />
+                  <span>info@smvschool.com</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Social Media */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Follow Us
+              </h3>
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full transition-all hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600"
+                >
+                  <Facebook className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full transition-all hover:bg-blue-400 hover:text-white dark:hover:bg-blue-400"
+                >
+                  <Twitter className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full transition-all hover:bg-pink-500 hover:text-white dark:hover:bg-pink-500"
+                >
+                  <Instagram className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 }

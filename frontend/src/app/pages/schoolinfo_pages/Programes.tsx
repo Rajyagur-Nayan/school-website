@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type FC } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,44 +13,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(ScrollTrigger);
+interface IProgram {
+  title: string;
+  description: string;
+  image: string;
+}
 
-const programs = [
-  // ... (same programs as before)
-  {
-    title: "Core Academics",
-    description: "Rigorous curriculum for Science, Maths, and Humanities.",
-    image: "/images/smv8.jpg", // Illustration
-  },
-  {
-    title: "Cultural Arts",
-    description: "Explore classical dance, music, and visual arts.",
-    image: "/images/smv3.jpg", // Dancers
-  },
-  {
-    title: "Sports & Athletics",
-    description: "Physical education and competitive team sports.",
-    image: "/images/smv1.jpg", // Sports day
-  },
-];
-
-export function Programs() {
-  const container = useRef(null);
-
+export const Programs: FC = () => {
+  const container = useRef<HTMLElement | null>(null);
   useGSAP(
     () => {
-      gsap.from(".program-card", {
+      gsap.to(".program-card", {
         scrollTrigger: {
           trigger: container.current,
           start: "top 80%",
         },
-        opacity: 0,
-        y: 50,
+        opacity: 1,
+        y: 0,
+        scale: 1,
         duration: 0.8,
         stagger: 0.2,
       });
@@ -55,8 +39,26 @@ export function Programs() {
     { scope: container }
   );
 
+  const programs: IProgram[] = [
+    {
+      title: "Core Academics",
+      description: "Rigorous curriculum for Science, Maths, and Humanities.",
+      image: "/images/smv school.jpg",
+    },
+    {
+      title: "Cultural Arts",
+      description: "Explore classical dance, music, and visual arts.",
+      image: "/images/smv9.jpg",
+    },
+    {
+      title: "Sports & Athletics",
+      description: "Physical education and competitive team sports.",
+      image: "/images/smv1.jpg",
+    },
+  ];
+
   return (
-    <section ref={container} className="py-20 md:py-32">
+    <section ref={container} className="py-20 md:py-32 bg-muted">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Programs</h2>
@@ -66,16 +68,17 @@ export function Programs() {
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {programs.map((program) => (
-            <Card key={program.title} className="program-card overflow-hidden">
+            <Card
+              key={program.title}
+              className="program-card overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 opacity-0 translate-y-12 scale-95"
+            >
               <CardHeader className="p-0">
-                {/* --- IMAGE STYLE FIX --- */}
-                <div className="relative h-64 w-full bg-muted">
+                <div className="relative h-64 w-full">
                   <Image
                     src={program.image}
                     alt={program.title}
                     layout="fill"
-                    objectFit="contain" // <-- CHANGED to 'contain'
-                    className="p-4"
+                    objectFit="cover"
                   />
                 </div>
               </CardHeader>
@@ -94,4 +97,4 @@ export function Programs() {
       </div>
     </section>
   );
-}
+};

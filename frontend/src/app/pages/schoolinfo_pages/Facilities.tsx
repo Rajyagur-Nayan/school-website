@@ -1,64 +1,74 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode, type FC } from "react";
 import Image from "next/image";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
+import { MonitorPlay, Library, Beaker } from "lucide-react";
 
-gsap.registerPlugin(ScrollTrigger);
+interface IFacility {
+  title: string;
+  desc: string;
+  icon: ReactNode;
+  image: string;
+}
 
-const facilities = [
-  {
-    title: "Computer Lab",
-    desc: "Equipped with modern systems to enhance digital literacy.",
-    image: "/images/smv5.jpg", // Image shows "Computer Lab" sign
-  },
-  {
-    title: "Spacious Campus",
-    desc: "A secure and nurturing environment for learning and play.",
-    image: "/images/smv7.jpg", // Image of "Amrutba High School" building
-  },
-  {
-    title: "Library",
-    desc: "A quiet space for students to read, research, and expand their minds.",
-    image: "/images/smv9.jpg", // Placeholder - use a library pic if you have one
-  },
-];
-
-export function Facilities() {
-  const container = useRef(null);
-
+export const Facilities: FC = () => {
+  const container = useRef<HTMLElement | null>(null);
   useGSAP(
     () => {
-      gsap.from(".facility-card", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
-        opacity: 0,
-        scale: 0.9,
-        duration: 0.8,
-        stagger: 0.2,
+      gsap.utils.toArray(".facility-card").forEach((card, index) => {
+        gsap.from(card as HTMLElement, {
+          scrollTrigger: { trigger: card as HTMLElement, start: "top 80%" },
+          opacity: 0,
+          x: index % 2 === 0 ? -50 : 50,
+          duration: 1,
+        });
       });
     },
     { scope: container }
   );
 
+  const facilities: IFacility[] = [
+    {
+      title: "Computer Lab",
+      desc: "Equipped with modern systems to enhance digital literacy.",
+      icon: <MonitorPlay className="w-8 h-8 text-primary" />,
+      image: "/images/smv5.jpg",
+    },
+    {
+      title: "Library",
+      desc: "A quiet space for students to read, research, and expand their minds.",
+      icon: <Library className="w-8 h-8 text-primary" />,
+      image: "/images/smv9.jpg",
+    },
+    {
+      title: "Science Lab",
+      desc: "Hands-on experiments in a state-of-the-art laboratory.",
+      icon: <Beaker className="w-8 h-8 text-primary" />,
+      image: "/images/smv school.jpg",
+    },
+  ];
+
   return (
-    <section ref={container} className="bg-muted py-20 md:py-32">
+    <section ref={container} className="py-20 md:py-32">
       <div className="container">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          Our Facilities
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Modern Facilities
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            An environment built for effective learning and growth.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-2 gap-8">
           {facilities.map((facility) => (
             <Card
               key={facility.title}
-              className="facility-card overflow-hidden"
+              className="facility-card shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2"
             >
-              <div className="relative h-64 w-full">
+              <div className="relative h-64 md:h-auto w-full">
                 <Image
                   src={facility.image}
                   alt={facility.title}
@@ -66,14 +76,15 @@ export function Facilities() {
                   objectFit="cover"
                 />
               </div>
-              <CardContent className="p-6">
-                <CardTitle className="mb-2">{facility.title}</CardTitle>
+              <div className="flex flex-col justify-center p-6">
+                {facility.icon}
+                <CardTitle className="mt-4 mb-2">{facility.title}</CardTitle>
                 <p className="text-muted-foreground">{facility.desc}</p>
-              </CardContent>
+              </div>
             </Card>
           ))}
         </div>
       </div>
     </section>
   );
-}
+};

@@ -7,6 +7,7 @@ const pool = new Pool({
     rejectUnauthorized: false, // Required for Neon
   },
   connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 30000,
 });
 
 module.exports = pool;

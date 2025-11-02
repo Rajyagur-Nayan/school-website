@@ -1,48 +1,24 @@
 "use client";
 
-import { useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRef, type FC } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { Button } from "@/components/ui/button";
 
-gsap.registerPlugin(ScrollTrigger);
-
-const steps = [
-  {
-    step: "01",
-    title: "Inquiry Form",
-    desc: "Fill out our online inquiry form to show your interest.",
-  },
-  {
-    step: "02",
-    title: "School Tour",
-    desc: "Visit our campus to meet the faculty and see our facilities.",
-  },
-  {
-    step: "03",
-    title: "Aptitude Test",
-    desc: "A simple assessment for students entering Std. 1 and above.",
-  },
-  {
-    step: "04",
-    title: "Final Admission",
-    desc: "Complete the documentation and fee payment to confirm your seat.",
-  },
-];
-
-export function AdmissionsProcess() {
-  const container = useRef(null);
+export const AdmissionsCTA: FC = () => {
+  const container = useRef<HTMLElement | null>(null);
   useGSAP(
     () => {
-      gsap.from(".step-card", {
+      gsap.from(".cta-content", {
         scrollTrigger: {
           trigger: container.current,
           start: "top 80%",
         },
         opacity: 0,
-        y: 50,
-        duration: 0.6,
+        y: 30,
+        scale: 0.9,
+        duration: 0.8,
         stagger: 0.2,
       });
     },
@@ -53,31 +29,30 @@ export function AdmissionsProcess() {
     <section
       id="admissions"
       ref={container}
-      className="bg-muted py-20 md:py-32"
+      className="py-20 md:py-32 bg-primary text-primary-foreground"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+        backgroundSize: "20px 20px",
+      }}
     >
-      <div className="container">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          How to Apply
+      <div className="container text-center flex flex-col items-center gap-6">
+        <h2 className="cta-content text-3xl md:text-4xl font-bold">
+          Join the SMV Family
         </h2>
-        <div className="grid md:grid-cols-4 gap-8">
-          {steps.map((step) => (
-            <Card
-              key={step.step}
-              className="step-card border-t-4 border-primary"
-            >
-              <CardHeader>
-                <span className="text-4xl font-bold text-primary">
-                  {step.step}
-                </span>
-                <CardTitle className="pt-4">{step.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{step.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <p className="cta-content text-lg max-w-2xl text-primary-foreground/90">
+          We are now accepting applications. Take the first step towards a
+          bright and well-rounded future for your child.
+        </p>
+        <Button
+          size="lg"
+          variant="secondary"
+          asChild
+          className="cta-content text-lg"
+        >
+          <Link href="/apply-now">Apply for Admission</Link>
+        </Button>
       </div>
     </section>
   );
-}
+};

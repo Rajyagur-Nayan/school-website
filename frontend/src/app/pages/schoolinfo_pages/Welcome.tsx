@@ -1,46 +1,56 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type FC } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
 import Link from "next/link";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Button } from "@/components/ui/button";
+// Note: No need to re-register plugins
 
-gsap.registerPlugin(ScrollTrigger);
-
-export function Welcome() {
-  const container = useRef(null);
-
+export const Welcome: FC = () => {
+  const container = useRef<HTMLElement | null>(null);
   useGSAP(
     () => {
       gsap.from(".welcome-content", {
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top 80%",
-        },
+        scrollTrigger: { trigger: container.current, start: "top 80%" },
         opacity: 0,
         x: -50,
         duration: 1,
+        ease: "power3.out",
       });
-      gsap.from(".welcome-image", {
+      gsap.to(".welcome-image-inner", {
+        yPercent: 20,
+        ease: "none",
         scrollTrigger: {
           trigger: container.current,
-          start: "top 80%",
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
         },
-        opacity: 0,
-        x: 50,
-        duration: 1,
       });
     },
     { scope: container }
   );
 
   return (
-    <section ref={container} className="py-20 md:py-32 bg-muted">
+    <section id="welcome" ref={container} className="py-20 md:py-32 bg-muted">
       <div className="container grid lg:grid-cols-2 gap-12 items-center">
-        <div className="welcome-content flex flex-col gap-6 items-start">
+        <div className="welcome-image relative w-full h-80 lg:h-[450px] rounded-xl overflow-hidden shadow-2xl">
+          <div className="welcome-image-inner absolute inset-0 -top-[25%] h-[125%] w-full">
+            <Image
+              src="/images/smv4.jpg"
+              alt="SMV Staff Community"
+              layout="fill"
+              objectFit="cover"
+              className="rounded-md"
+            />
+          </div>
+        </div>
+        <div className="welcome-content flex flex-col gap-4 items-start">
+          <p className="font-semibold text-primary tracking-wide uppercase">
+            About Our School
+          </p>
           <h2 className="text-3xl md:text-4xl font-bold">
             Welcome to Our Community
           </h2>
@@ -51,21 +61,10 @@ export function Welcome() {
             everyone feels a sense of belonging.
           </p>
           <Button size="lg" asChild>
-            <Link href="#about">About Our Mission</Link>
+            <Link href="#">About Our Mission</Link>
           </Button>
-        </div>
-
-        {/* --- IMAGE STYLE FIX --- */}
-        <div className="welcome-image relative w-full h-80 lg:h-96 rounded-xl overflow-hidden shadow-2xl bg-black/5 dark:bg-black/20">
-          <Image
-            src="/images/smv4.jpg" // Staff group photo
-            alt="SMV Staff Community"
-            layout="fill"
-            objectFit="contain" // <-- CHANGED to 'contain'
-            className="p-4"
-          />
         </div>
       </div>
     </section>
   );
-}
+};
