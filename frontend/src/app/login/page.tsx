@@ -3,7 +3,8 @@
 import { useState, FormEvent } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import Link from "next/link"; // Import Link
+import Link from "next/link";
+import { useRouter } from "next/navigation"; // <-- MODIFIED: 1. Import useRouter
 
 // Shadcn/ui Components
 import { Button } from "@/components/ui/button";
@@ -21,16 +22,16 @@ import {
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
-  // --- State for the entire component (NO CHANGE) ---
+  const router = useRouter(); // <-- MODIFIED: 2. Initialize the router
   const [isRegisterView, setIsRegisterView] = useState(false);
 
-  // --- Login Form State (NO CHANGE) ---
+  // --- Login Form State ---
   const [loginGrNo, setLoginGrNo] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
-  // --- Register Form State (NO CHANGE) ---
+  // --- Register Form State ---
   const [registerGrNo, setRegisterGrNo] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -38,7 +39,7 @@ export default function LoginPage() {
   const [registerError, setRegisterError] = useState("");
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
 
-  // --- Login Form Submit Handler (NO CHANGE) ---
+  // --- Login Form Submit Handler ---
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -56,7 +57,8 @@ export default function LoginPage() {
 
       if (response.status === 200) {
         localStorage.setItem("user_role", "parent"); // Hard-code role
-        toast.success("Login successful!");
+        toast.success("Login successful! Redirecting..."); // <-- MODIFIED: Updated toast message
+        router.push("/school-info"); // <-- MODIFIED: 3. Redirect to /school-info
       } else {
         const msg =
           "Login successful, but server returned an unexpected status.";
@@ -118,29 +120,17 @@ export default function LoginPage() {
     }
   };
 
-  // --- JSX with SLIDING ANIMATION ---
+  // --- JSX with SLIDING ANIMATION (NO CHANGE) ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 p-4">
-      {/* This is the "viewport" div. 
-        - It sets the width (max-w-md).
-        - `overflow-hidden` hides the form that is off-screen.
-      */}
       <div className="w-full max-w-md overflow-hidden">
-        {/* This is the "track" div. 
-          - `display: flex` puts the forms side-by-side.
-          - `transition-transform` creates the smooth slide.
-          - The `transform` style is toggled by `isRegisterView` to slide.
-        */}
         <div
           className="flex transition-transform duration-700 ease-in-out"
           style={{
             transform: isRegisterView ? "translateX(-100%)" : "translateX(0%)",
           }}
         >
-          {/* --- LOGIN FORM (Slide 1) ---
-            - `w-full` and `flex-shrink-0` ensure it takes 100% of 
-              the viewport width and doesn't get squished.
-          */}
+          {/* --- LOGIN FORM (Slide 1) --- */}
           <div className="w-full flex-shrink-0">
             <Card className="shadow-2xl">
               <CardHeader className="text-center">
@@ -200,7 +190,6 @@ export default function LoginPage() {
               <CardFooter className="flex-col items-center justify-center space-y-3 text-sm">
                 <p className="text-gray-600">
                   Don&apos;t have an account?{" "}
-                  {/* This button toggles the slide */}
                   <button
                     type="button"
                     onClick={() => setIsRegisterView(true)}
@@ -222,9 +211,7 @@ export default function LoginPage() {
             </Card>
           </div>
 
-          {/* --- REGISTER FORM (Slide 2) ---
-            - Also `w-full` and `flex-shrink-0`.
-          */}
+          {/* --- REGISTER FORM (Slide 2) --- */}
           <div className="w-full flex-shrink-0">
             <Card className="shadow-2xl">
               <CardHeader className="text-center">
@@ -302,7 +289,7 @@ export default function LoginPage() {
 
               <CardFooter className="flex justify-center">
                 <p className="text-center text-sm text-gray-600">
-                  Already have an account? {/* This button slides back */}
+                  Already have an account?{" "}
                   <button
                     type="button"
                     onClick={() => setIsRegisterView(false)}
