@@ -29,7 +29,8 @@ import {
   UmbrellaIcon,
   Plus,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+// --- MODIFIED: Imported useRouter ---
+import { usePathname, useRouter } from "next/navigation";
 
 // --- Link list for Teachers ---
 const teacherItems = [
@@ -119,14 +120,22 @@ const Sidebar = ({
   setIsOpen: (isOpen: boolean) => void;
 }) => {
   const pathname = usePathname();
+  const router = useRouter(); // --- MODIFIED: Initialized router ---
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- MODIFIED: Added redirect logic ---
   useEffect(() => {
     const role = localStorage.getItem("user_role");
-    setUserRole(role);
-    setIsLoading(false);
-  }, []);
+    if (!role) {
+      // No role found, redirect to login page
+      router.push("/login"); // Assuming '/login' is your login page
+    } else {
+      // Role found, set state and continue
+      setUserRole(role);
+      setIsLoading(false);
+    }
+  }, [router]);
 
   const sidebarLinks = userRole === "parent" ? parentItems : teacherItems;
 
@@ -196,11 +205,11 @@ const Sidebar = ({
         key={link.title}
         href={link.href}
         className={`flex items-center px-4 py-2.5 rounded-lg text-sm transition-all duration-200
-         lg:justify-center lg:group-hover:justify-start ${
-           isActive
-             ? "bg-blue-50 text-blue-600 font-semibold dark:bg-blue-900/30 dark:text-blue-200"
-             : "text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-         }`}
+          lg:justify-center lg:group-hover:justify-start ${
+            isActive
+              ? "bg-blue-50 text-blue-600 font-semibold dark:bg-blue-900/30 dark:text-blue-200"
+              : "text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
       >
         <link.icon className="h-6 w-6" />
         <span className="ml-3 lg:hidden lg:group-hover:inline whitespace-nowrap">
@@ -210,6 +219,8 @@ const Sidebar = ({
     );
   };
 
+  // This loading state is now crucial. It prevents the sidebar from rendering
+  // (and defaulting to 'teacherItems') before the auth check is complete.
   if (isLoading) {
     return (
       <aside
@@ -228,7 +239,6 @@ const Sidebar = ({
     <>
       <aside
         className={`group fixed lg:relative h-screen w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 transform flex flex-col 
-      ${/* --- FIX: Updated z-index to 50 --- */ ""}
       z-50
       ${isOpen ? "translate-x-0" : "-translate-x-full"} 
       lg:translate-x-0 lg:w-20 lg:hover:w-72 overflow-hidden`}
@@ -245,7 +255,6 @@ const Sidebar = ({
         <div
           onClick={() => setIsOpen(false)}
           className={`fixed inset-0 bg-black/50 backdrop-blur-sm
-          ${/* --- FIX: Updated z-index to 40 (behind sidebar) --- */ ""} 
           z-40 lg:hidden`}
         />
       )}
@@ -253,7 +262,7 @@ const Sidebar = ({
   );
 };
 
-// --- Main AppShell Component ---
+// --- Main AppShell Component (No Change) ---
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -269,8 +278,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
          */}
         <header
           className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 shadow-md flex items-center justify-between p-4 h-16 border-b dark:border-slate-800
-  
-          z-40"
+    
+         z-40"
         >
           <Button
             variant="ghost"
