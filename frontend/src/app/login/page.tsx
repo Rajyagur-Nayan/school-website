@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // <-- MODIFIED: 1. Import useRouter
+import { useRouter } from "next/navigation";
 
 // Shadcn/ui Components
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import {
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
-  const router = useRouter(); // <-- MODIFIED: 2. Initialize the router
+  const router = useRouter();
   const [isRegisterView, setIsRegisterView] = useState(false);
 
   // --- Login Form State ---
@@ -38,6 +38,31 @@ export default function LoginPage() {
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerError, setRegisterError] = useState("");
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
+
+  // ✅ --- AUTO LOGIN (VERIFY SESSION COOKIE) ---
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/verify-session`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // Store role if returned by backend, or fallback to parent
+          localStorage.setItem("user_role", data.user?.role || "parent");
+          toast.success("Session restored! Redirecting...");
+          router.push("/school-info");
+        }
+      } catch (err) {
+        console.warn("Session verification failed:", err);
+      }
+    };
+
+    verifySession();
+  }, [router]);
 
   // --- Login Form Submit Handler ---
   const handleLoginSubmit = async (e: FormEvent) => {
@@ -56,9 +81,9 @@ export default function LoginPage() {
       );
 
       if (response.status === 200) {
-        localStorage.setItem("user_role", "parent"); // Hard-code role
-        toast.success("Login successful! Redirecting..."); // <-- MODIFIED: Updated toast message
-        router.push("/school-info"); // <-- MODIFIED: 3. Redirect to /school-info
+        localStorage.setItem("user_role", "parent");
+        toast.success("Login successful! Redirecting...");
+        router.push("/school-info");
       } else {
         const msg =
           "Login successful, but server returned an unexpected status.";
@@ -76,7 +101,7 @@ export default function LoginPage() {
     }
   };
 
-  // --- Register Form Submit Handler (NO CHANGE) ---
+  // --- Register Form Submit Handler ---
   const handleRegisterSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -96,7 +121,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // important for sending/receiving cookies
+        credentials: "include",
         body: JSON.stringify({
           grNo: registerGrNo,
           email: registerEmail,
@@ -109,7 +134,7 @@ export default function LoginPage() {
       setRegisterEmail("");
       setRegisterPassword("");
       setRegisterConfirmPassword("");
-      setIsRegisterView(false); // Slide back to login
+      setIsRegisterView(false);
     } catch (err: any) {
       const errorMsg =
         err.response?.data?.error || "Registration failed. Please try again.";
@@ -120,7 +145,7 @@ export default function LoginPage() {
     }
   };
 
-  // --- JSX with SLIDING ANIMATION (NO CHANGE) ---
+  // --- JSX (unchanged) ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 transition-colors p-4">
       <div className="w-full max-w-md overflow-hidden">

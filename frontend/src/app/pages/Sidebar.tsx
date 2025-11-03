@@ -172,9 +172,15 @@ function Sidebar({
     router.push("/");
   };
 
-  // ✅ This is case-insensitive and safer
-  const sidebarLinks =
-    userRole?.toLowerCase() === "parent" ? parentItems : teacherItems;
+  // ✅ Modified part: show parentItems if parent, teacherItems if teacher
+  let sidebarLinks: any[] = [];
+  if (userRole?.toLowerCase() === "parent") {
+    sidebarLinks = parentItems;
+  } else if (userRole?.toLowerCase() === "teacher") {
+    sidebarLinks = teacherItems;
+  } else {
+    sidebarLinks = []; // no links if role not found
+  }
 
   return (
     <>

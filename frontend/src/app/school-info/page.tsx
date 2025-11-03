@@ -9,13 +9,8 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TextPlugin } from "gsap/TextPlugin";
 
-// --- Theme (Dark Mode) Import ---
-import { useTheme } from "next-themes";
-
 // --- Icon Imports ---
 import {
-  Sun,
-  Moon,
   Facebook,
   Twitter,
   Instagram,
@@ -38,7 +33,6 @@ import {
 // --- Register GSAP Plugins ---
 gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-// --- Image Assets ---
 // (All paths now consistently in /images/)
 const heroBg = "/images/smv8.jpg"; // The beautiful illustration
 const principalImg = "/images/smv2.jpg"; // Group photo with flag
@@ -82,34 +76,6 @@ const Loader = () => (
 /**
  * ThemeToggle Component
  */
-const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) {
-    return (
-      <div className="fixed top-4 right-4 z-40 h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-800" />
-    );
-  }
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="fixed top-4 right-4 z-40 rounded-full bg-white/50 shadow-md backdrop-blur-sm transition-all hover:bg-white/80 dark:bg-gray-800/50 dark:hover:bg-gray-700/80"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      aria-label="Toggle theme"
-    >
-      {theme === "dark" ? (
-        <Sun className="h-5 w-5 text-yellow-400" />
-      ) : (
-        <Moon className="h-5 w-5 text-blue-600" />
-      )}
-    </Button>
-  );
-};
 
 /**
  * Main About Page Component
@@ -283,8 +249,6 @@ export default function AboutPage() {
           isLoading ? "opacity-0" : "" // Stays opacity-0 until GSAP fades it in
         }`}
       >
-        <ThemeToggle />
-
         {/* === 1. Hero Section === */}
         <header
           ref={heroRef}

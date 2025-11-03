@@ -65,21 +65,11 @@ router.post("/", async (req, res) => {
     const isProduction = "production";
 
     const cookieOptions = {
-      // 👇 In production: allow cross-site cookies (needed for Render + Vercel)
-      // 👇 In development: "lax" so cookies work on localhost (HTTP)
-      sameSite: isProduction ? "none" : "lax",
-
-      // 👇 Only true in production, because it needs HTTPS
-      secure: true,
-
-      // Cookie will last for 7 days
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-
-      // Prevents access from JavaScript (helps security)
       httpOnly: true,
-
-      // Ensures the cookie is available for all routes
+      secure: true,
+      sameSite: "none",
       path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
     res

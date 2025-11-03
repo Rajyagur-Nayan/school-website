@@ -67,4 +67,16 @@ app.use("/add/staff", require("./src/routes/staffAdd/stafAdd.js"));
 app.use("/add_school", require("./src/routes/addSchool/add_school.js"));
 app.use("/login_school", require("./src/routes/addSchool/login_school.js"));
 
+app.get("/verify-session", (req, res) => {
+  const token = req.cookies.session;
+  if (!token) return res.json({ success: false });
+
+  try {
+    const user = verifyJWT(token); // your JWT verification logic
+    return res.json({ success: true, user });
+  } catch {
+    return res.json({ success: false });
+  }
+});
+
 module.exports = app;
