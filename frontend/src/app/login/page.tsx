@@ -91,18 +91,18 @@ export default function LoginPage() {
     setIsRegisterLoading(true);
 
     try {
-      await axios.post(
-        `${BACKEND_URL}/signup`,
-        {
+      await fetch(`${BACKEND_URL}/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // important for sending/receiving cookies
+        body: JSON.stringify({
           grNo: registerGrNo,
           email: registerEmail,
           password: registerPassword,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+        }),
+      });
 
       toast.success("Registration successful! Please log in.");
       setRegisterGrNo("");
@@ -167,7 +167,7 @@ export default function LoginPage() {
                   </div>
                   <div className="text-right">
                     <Link
-                      href="/forgot-password"
+                      href=""
                       className="text-sm font-medium text-blue-600 hover:underline"
                     >
                       Forgot password?
