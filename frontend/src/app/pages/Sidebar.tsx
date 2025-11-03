@@ -28,6 +28,7 @@ import {
   LogOut,
   Menu,
   X,
+  House,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -44,12 +45,26 @@ import { useAuth } from "./auth/AuthContext";
 
 // ---------------- MENU ITEMS ----------------
 const teacherItems = [
-  { title: "Admin Dashboard", icon: LayoutDashboard, href: "/admin-dashboard" },
-  { title: "Add Student using Excel", icon: Users, href: "/add-student" },
-  { title: "Student Admission", icon: Users, href: "/student-management" },
+  {
+    title: "Admin Dashboard",
+    icon: LayoutDashboard,
+    href: "/admin-dashboard",
+  },
+
+  { title: "Add Student useing Excel", icon: Users, href: "/add-student" },
+  { title: "Student admission", icon: Users, href: "/student-management" },
   { title: "Fee's", icon: IndianRupee, href: "/fee-management" },
   { title: "Exam's", icon: ClipboardList, href: "/exam-management" },
-  { title: "Attendance", icon: UserCheck, href: "/attendance-management" },
+  {
+    title: "Student Attendance",
+    icon: UserCheck,
+    href: "/attendance-management",
+  },
+  {
+    title: "feculty Attendance",
+    icon: UserCheck,
+    href: "/staff-attendance",
+  },
   {
     title: "Timetable",
     icon: CalendarDays,
@@ -58,13 +73,21 @@ const teacherItems = [
   { title: "Staff Management", icon: UserCog, href: "/staff-management" },
   { title: "Add Department", icon: Plus, href: "/add-school" },
   {
-    title: "Exam Paper Generator",
+    title: "Exam paper Gunration",
     icon: FileQuestion,
     href: "/exam-paper-generator",
   },
   { title: "Events", icon: Megaphone, href: "/event-management" },
-  { title: "Holidays", icon: UmbrellaIcon, href: "/holiday-management" },
-  { title: "Inventory", icon: Warehouse, href: "/inventory-management" },
+  {
+    title: "Holidayes",
+    icon: UmbrellaIcon,
+    href: "/holiday-management",
+  },
+  {
+    title: "Inventory",
+    icon: Warehouse,
+    href: "/inventory-management",
+  },
 ];
 
 const parentItems = [
@@ -75,13 +98,34 @@ const parentItems = [
   },
   { title: "School Information", icon: School, href: "/school-info" },
   { title: "Exam's", icon: ClipboardList, href: "/view-exam-report" },
-  { title: "Attendance", icon: UserCheck, href: "/view-attendance-report" },
-  { title: "Timetable", icon: CalendarDays, href: "/view-timetable" },
-  { title: "AI Chat Bot", icon: Bot, href: "/ai-chatbot" },
+  {
+    title: "Attendance",
+    icon: UserCheck,
+    href: "/view-attendance-report",
+  },
+  {
+    title: "Timetable",
+    icon: CalendarDays,
+    href: "/view-timetable",
+  },
+  {
+    title: "Ai Chat Bot",
+    icon: Bot,
+    href: "/ai-chatbot",
+  },
   { title: "Events", icon: Megaphone, href: "/view_event" },
-  { title: "Inventory", icon: Warehouse, href: "/view-inventory" },
-  { title: "AI-Learning", icon: BrainCircuit, href: "/ai-learning" },
+  {
+    title: "Inventory",
+    icon: Warehouse,
+    href: "/view-inventory",
+  },
+  {
+    title: "AI-Lerning",
+    icon: BrainCircuit,
+    href: "/ai-lerning",
+  },
   { title: "View Holiday", icon: Umbrella, href: "/view-holidayes" },
+  { title: "Home", icon: House, href: "/home" },
 ];
 
 // ---------------- SIDEBAR ----------------
@@ -106,7 +150,7 @@ function Sidebar({
     const role = localStorage.getItem("user_role");
     const sessionToken = Cookies.get("token");
     if (!role || !sessionToken) {
-      router.push("/login");
+      router.push("/");
     } else {
       setUserRole(role);
       setToken(sessionToken);
@@ -122,12 +166,15 @@ function Sidebar({
 
   const handleLogout = () => {
     Cookies.remove("token");
+    Cookies.remove("student_id");
     localStorage.removeItem("user_role");
     if (logout) logout();
     router.push("/");
   };
 
-  const sidebarLinks = userRole === "parent" ? parentItems : teacherItems;
+  // ✅ This is case-insensitive and safer
+  const sidebarLinks =
+    userRole?.toLowerCase() === "parent" ? parentItems : teacherItems;
 
   return (
     <>
@@ -157,7 +204,7 @@ function Sidebar({
                 >
                   <Avatar className="h-9 w-9 border">
                     <AvatarImage
-                      src={user?.avatarUrl || "/user-avatar.png"}
+                      src={user?.avatarUrl || "/user-avtar.png"}
                       alt="User"
                     />
                     <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
