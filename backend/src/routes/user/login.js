@@ -62,29 +62,13 @@ router.post("/", async (req, res) => {
     };
     const token = generateToken(data);
 
-    const isProduction = "production";
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    };
-
-    res
-      .status(200)
-      .cookie("token", token, {
-        // This is your main, secure token
-        ...cookieOptions,
-      })
-      // --- THIS IS THE NEW LINE YOU REQUESTED ---
-      .cookie("student_id", String(studentId), {
-        // This is the separate, accessible student_id
-        ...cookieOptions,
-      })
-      // --- END OF NEW LINE ---
-      .json({ message: "Login successful", token, user: data }); // Send user data including role
+    // ✅ RETURN token AND student_id (NOT cookies)
+    return res.status(200).json({
+      message: "Login successful",
+      token: token,
+      student_id: studentId,
+      role: user.role,
+    }); // Send user data including role
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Internal server error" });

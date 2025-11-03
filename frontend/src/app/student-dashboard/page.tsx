@@ -478,19 +478,6 @@ const AnnouncementsCard: FC<{ announcements: AnnouncementItem[] }> = ({
   );
 };
 
-// --- *** NEW HELPER FUNCTION *** ---
-const getCookie = (name: string): string | null => {
-  if (typeof document === "undefined") {
-    return null;
-  }
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(";").shift() || null;
-  }
-  return null;
-};
-
 // --- 4. NEW: Exam Results Card ---
 const ExamResultsCard: FC<{ results: ApiExamResult[] }> = ({ results }) => (
   <Card className="rounded-2xl shadow-md bg-white dark:bg-slate-900">
@@ -573,7 +560,12 @@ const StudentDashboard: FC = () => {
       setLoading(true);
       setError(null);
 
-      const studentId = getCookie("student_id");
+      const studentId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("student_id")
+          : null;
+
+      console.log(studentId);
 
       if (!studentId) {
         setError("Student ID not found. Please log in again.");

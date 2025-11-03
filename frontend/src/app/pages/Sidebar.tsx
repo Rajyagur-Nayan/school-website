@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Cookies from "js-cookie";
 import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -148,7 +147,7 @@ function Sidebar({
 
   useEffect(() => {
     const role = localStorage.getItem("user_role");
-    const sessionToken = Cookies.get("token");
+    const sessionToken = localStorage.getItem("token");
     if (!role || !sessionToken) {
       router.push("/");
     } else {
@@ -165,8 +164,8 @@ function Sidebar({
   }
 
   const handleLogout = () => {
-    Cookies.remove("token");
-    Cookies.remove("student_id");
+    localStorage.removeItem("token");
+    localStorage.removeItem("student_id");
     localStorage.removeItem("user_role");
     if (logout) logout();
     router.push("/");
@@ -307,7 +306,7 @@ function Navbar({}: {
 
   useEffect(() => {
     const role = localStorage.getItem("user_role");
-    const sessionToken = Cookies.get("token");
+    const sessionToken = localStorage.getItem("token");
     if (!role || !sessionToken) {
       router.push("/login");
     } else {
@@ -317,8 +316,8 @@ function Navbar({}: {
   }, [router]);
 
   const handleLogout = () => {
-    Cookies.remove("token");
-    Cookies.remove("student_id");
+    localStorage.getItem("token");
+    localStorage.getItem("student_id");
     localStorage.removeItem("user_role");
     if (logout) logout();
     router.push("/");

@@ -71,17 +71,19 @@ export default function LoginPage() {
     setIsLoginLoading(true);
 
     try {
-      const response = await axios.post(
-        `${BACKEND_URL}/login`,
-        {
-          grNo: loginGrNo,
-          password: loginPassword,
-        },
-        { withCredentials: true }
-      );
+      const response = await axios.post(`${BACKEND_URL}/login`, {
+        grNo: loginGrNo,
+        password: loginPassword,
+      });
 
       if (response.status === 200) {
-        localStorage.setItem("user_role", "parent");
+        const { token, student_id, role } = response.data;
+
+        // ✅ Store token, student_id, and role in localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("student_id", student_id);
+        localStorage.setItem("user_role", role || "parent");
+
         toast.success("Login successful! Redirecting...");
         router.push("/school-info");
       } else {
