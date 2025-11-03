@@ -31,7 +31,6 @@ import {
 
 // --- ADDED: ScrollArea for the list ---
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AppShell } from "../pages/Sidebar";
 
 // --- TypeScript Type Definitions ---
 
@@ -639,38 +638,36 @@ const SchoolDashboardPage: FC = () => {
 
   // --- Render Dashboard ---
   return (
-    <AppShell>
-      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        {/* <Sidebar /> */}
-        <div className="flex-1 flex flex-col">
-          {/* <Header /> */}
-          {/* --- Header with Buttons --- */}
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      {/* <Sidebar /> */}
+      <div className="flex-1 flex flex-col">
+        {/* <Header /> */}
+        {/* --- Header with Buttons --- */}
 
-          <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Content Column */}
-            <div className="lg:col-span-2 space-y-6">
-              <StatsCards stats={stats} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <StudentGenderChart genderData={genderData} />
-                <DailyAttendanceChart attendanceData={attendanceData} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FacultyPerformanceChart facultyPerfData={facultyPerfData} />
-                <ClassPerformanceChart classPerfData={classPerfData} />
-              </div>
-              <FinancialPerformanceChart financeData={financeData} />
+        <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-6">
+            <StatsCards stats={stats} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <StudentGenderChart genderData={genderData} />
+              <DailyAttendanceChart attendanceData={attendanceData} />
             </div>
-            {/* Right Sidebar Column */}
-            <div className="lg:col-span-1 space-y-6">
-              <CalendarCard />
-              <EventsCard eventsData={eventsData} />
-              {/* --- ADDED: Upcoming Exams Card --- */}
-              <UpcomingExamsCard examsData={examsData} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FacultyPerformanceChart facultyPerfData={facultyPerfData} />
+              <ClassPerformanceChart classPerfData={classPerfData} />
             </div>
-          </main>
-        </div>
+            <FinancialPerformanceChart financeData={financeData} />
+          </div>
+          {/* Right Sidebar Column */}
+          <div className="lg:col-span-1 space-y-6">
+            <CalendarCard />
+            <EventsCard eventsData={eventsData} />
+            {/* --- ADDED: Upcoming Exams Card --- */}
+            <UpcomingExamsCard examsData={examsData} />
+          </div>
+        </main>
       </div>
-    </AppShell>
+    </div>
   );
 };
 

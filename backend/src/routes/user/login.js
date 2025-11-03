@@ -61,7 +61,7 @@ router.post("/", async (req, res) => {
       role: user.role, // Include user role if available
     };
     const token = generateToken(data);
-    // Detect environment
+
     const isProduction = "production";
 
     const cookieOptions = {

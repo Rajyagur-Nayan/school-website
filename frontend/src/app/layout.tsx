@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-// --- FIX: Import from the 'geist' package ---
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-// --- END FIX ---
 import "./globals.css";
-import Footer from "./pages/Footer";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "next-themes";
-import { Navbar } from "./pages/Navbar";
 import { AuthProvider } from "./pages/auth/AuthContext";
+import { AppShell } from "./pages/Sidebar";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -30,9 +27,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <AuthProvider>
             <Toaster />
-            <Navbar />
-            {children}
-            <Footer />
+            <AppShell>{children}</AppShell>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -122,7 +122,7 @@ export default function LoginPage() {
 
   // --- JSX with SLIDING ANIMATION (NO CHANGE) ---
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 transition-colors p-4">
       <div className="w-full max-w-md overflow-hidden">
         <div
           className="flex transition-transform duration-700 ease-in-out"

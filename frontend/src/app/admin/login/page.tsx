@@ -33,7 +33,6 @@ type College = {
 };
 
 export default function UnifiedLoginPage() {
-  // Renamed component for clarity
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
@@ -66,7 +65,6 @@ export default function UnifiedLoginPage() {
     e.preventDefault();
     setError("");
 
-    // --- Added Validation for new fields ---
     if (!selectedSchool) {
       const msg = "Please select your school.";
       setError(msg);
@@ -82,13 +80,12 @@ export default function UnifiedLoginPage() {
 
     setIsLoading(true);
 
-    // --- Dynamic Endpoint and Payload ---
     const endpoint = role === "admin" ? "/login_school" : "/login_school";
     const payload = {
       email,
       password,
       role,
-      schoolId: selectedSchool, // Send the school ID
+      schoolId: selectedSchool,
     };
 
     try {
@@ -96,7 +93,6 @@ export default function UnifiedLoginPage() {
         withCredentials: true,
       });
 
-      // --- Handle response from either admin or school login ---
       const userRole =
         response.data?.admin?.role || response.data?.college?.role;
 
@@ -104,7 +100,6 @@ export default function UnifiedLoginPage() {
         localStorage.setItem("user_role", userRole);
         toast.success("Login successful!");
 
-        // --- Dynamic Redirect ---
         const redirectUrl = userRole === "admin" ? "/admin-dashboard" : "/home";
         window.location.href = redirectUrl;
       } else {
@@ -129,25 +124,35 @@ export default function UnifiedLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-white to-gray-50 p-4">
-      <Card className="w-full max-w-md shadow-2xl bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-white to-gray-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 p-4 transition-colors duration-300">
+      <Card className="w-full max-w-md shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
         <CardHeader className="text-center">
-          <CardTitle className="text-4xl font-bold">Welcome</CardTitle>
-          <CardDescription className="pt-2">
+          <CardTitle className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+            Welcome
+          </CardTitle>
+          <CardDescription className="pt-2 text-gray-600 dark:text-gray-400">
             Please log in to your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* --- ADDED: School Dropdown --- */}
+            {/* --- School Dropdown --- */}
             <div className="space-y-2">
-              <Label htmlFor="school-select">Select Your School</Label>
+              <Label
+                htmlFor="school-select"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Select Your School
+              </Label>
               <Select
                 onValueChange={setSelectedSchool}
                 value={selectedSchool}
                 disabled={isFetchingSchools}
               >
-                <SelectTrigger id="school-select" className="w-full">
+                <SelectTrigger
+                  id="school-select"
+                  className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                >
                   <SelectValue
                     placeholder={
                       isFetchingSchools
@@ -156,7 +161,7 @@ export default function UnifiedLoginPage() {
                     }
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                   {colleges.map((college) => (
                     <SelectItem key={college.id} value={String(college.id)}>
                       {college.name}
@@ -166,14 +171,22 @@ export default function UnifiedLoginPage() {
               </Select>
             </div>
 
-            {/* --- ADDED: Role Dropdown --- */}
+            {/* --- Role Dropdown --- */}
             <div className="space-y-2">
-              <Label htmlFor="role-select">I am a</Label>
+              <Label
+                htmlFor="role-select"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                I am a
+              </Label>
               <Select onValueChange={setRole} value={role}>
-                <SelectTrigger id="role-select" className="w-full">
+                <SelectTrigger
+                  id="role-select"
+                  className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                >
                   <SelectValue placeholder="Select your role..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
                 </SelectContent>
@@ -182,7 +195,12 @@ export default function UnifiedLoginPage() {
 
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label
+                htmlFor="email"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Email Address
+              </Label>
               <Input
                 type="email"
                 id="email"
@@ -190,12 +208,18 @@ export default function UnifiedLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 required
+                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
               />
             </div>
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label
+                htmlFor="password"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Password
+              </Label>
               <Input
                 type="password"
                 id="password"
@@ -203,27 +227,30 @@ export default function UnifiedLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
               />
             </div>
 
-            {/* Forgot Password Link */}
+            {/* Forgot Password */}
             <div className="text-right">
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-blue-600 hover:underline"
+                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
               >
                 Forgot password?
               </Link>
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 text-center">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400 text-center">
+                {error}
+              </p>
             )}
 
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-gray-900 hover:bg-gray-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white transition-colors duration-300"
               disabled={isLoading || isFetchingSchools}
             >
               {isLoading ? "Logging in..." : "Log In"}

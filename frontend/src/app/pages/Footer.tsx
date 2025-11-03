@@ -1,4 +1,5 @@
 "use client";
+
 import React, { FC } from "react";
 import { motion } from "framer-motion";
 import {
@@ -10,6 +11,7 @@ import {
   Instagram,
   Linkedin,
 } from "lucide-react";
+import Link from "next/link";
 
 const Footer: FC = () => {
   const linkVariants = {
@@ -19,17 +21,20 @@ const Footer: FC = () => {
 
   return (
     <motion.footer
-      className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 w-full mt-auto"
+      className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 w-full border-t border-slate-200 dark:border-slate-800 mt-auto"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
       transition={{ staggerChildren: 0.1 }}
     >
-      <div className="container mx-auto px-4 py-12">
-        {/* Main 4-column grid */}
-        <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Column 1: Contact Info */}
-          <motion.div className="space-y-4" variants={linkVariants}>
+      <div className="container mx-auto px-4 py-10">
+        {/* 4-column grid */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          variants={linkVariants}
+        >
+          {/* Column 1 */}
+          <div className="space-y-4">
             <h5 className="text-lg font-semibold text-gray-900 dark:text-white">
               SMV High School
             </h5>
@@ -55,112 +60,69 @@ const Footer: FC = () => {
                 info@smvhighschool.edu
               </a>
             </p>
-          </motion.div>
+          </div>
 
-          {/* Column 2: Quick Links */}
-          <motion.div variants={linkVariants}>
+          {/* Column 2 */}
+          <div>
             <h5 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
               Quick Links
             </h5>
             <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Parent Portal
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Student Portal
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Academic Calendar
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Faculty Directory
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  News & Events
-                </a>
-              </li>
+              {[
+                "Parent Portal",
+                "Student Portal",
+                "Academic Calendar",
+                "Faculty Directory",
+                "News & Events",
+              ].map((text) => (
+                <li key={text}>
+                  <a href="#" className="hover:text-blue-600 transition-colors">
+                    {text}
+                  </a>
+                </li>
+              ))}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Column 3: About SMV */}
-          <motion.div variants={linkVariants}>
+          {/* Column 3 */}
+          <div>
             <h5 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
               About SMV
             </h5>
             <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Our Mission & Vision
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Admissions
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-600 transition-colors">
-                  Our Campus
-                </a>
-              </li>
+              {[
+                "Our Mission & Vision",
+                "Admissions",
+                "Careers",
+                "Contact Us",
+                "Our Campus",
+              ].map((text) => (
+                <li key={text}>
+                  <a href="#" className="hover:text-blue-600 transition-colors">
+                    {text}
+                  </a>
+                </li>
+              ))}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Column 4: Social Media */}
-          <motion.div variants={linkVariants}>
+          {/* Column 4 */}
+          <div>
             <h5 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
               Connect With Us
             </h5>
             <div className="flex space-x-4">
-              <a
-                href="#"
-                aria-label="Facebook"
-                className="text-gray-500 hover:text-blue-600 transition-colors"
-              >
-                <Facebook className="w-6 h-6" />
-              </a>
-              <a
-                href="#"
-                aria-label="Twitter"
-                className="text-gray-500 hover:text-blue-400 transition-colors"
-              >
-                <Twitter className="w-6 h-6" />
-              </a>
-              <a
-                href="#"
-                aria-label="Instagram"
-                className="text-gray-500 hover:text-pink-500 transition-colors"
-              >
-                <Instagram className="w-6 h-6" />
-              </a>
-              <a
-                href="#"
-                aria-label="LinkedIn"
-                className="text-gray-500 hover:text-blue-700 transition-colors"
-              >
-                <Linkedin className="w-6 h-6" />
-              </a>
+              {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
+                <Link
+                  key={i}
+                  href="#"
+                  className="text-gray-500 hover:text-blue-600 transition-colors"
+                >
+                  <Icon className="w-6 h-6" />
+                </Link>
+              ))}
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </motion.footer>

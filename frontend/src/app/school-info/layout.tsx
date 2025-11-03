@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { AppShell } from "../pages/Sidebar";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -19,9 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={poppins.className}>
-        <AppShell>{children} </AppShell>
-      </body>
+      <body className={poppins.className}>{children}</body>
     </html>
   );
 }

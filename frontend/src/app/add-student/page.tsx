@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, Upload, CheckCircle } from "lucide-react";
-import { AppShell } from "../pages/Sidebar";
 
 // --- MODIFIED Student type ---
 // This type now matches all 22 fields expected by your backend POST route.
@@ -212,142 +211,140 @@ export default function UploadPage() {
   };
 
   return (
-    <AppShell>
-      <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">Bulk Upload Student Data</h1>
+    <div className="container mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">Bulk Upload Student Data</h1>
 
-        {/* --- Upload Controls (Unchanged) --- */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6 p-6 border rounded-lg bg-slate-50 dark:bg-gray-900">
-          <div className="flex-1 space-y-2">
-            <h3 className="font-semibold">1. Select Excel File</h3>
-            <Input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleFileChange}
-              className="max-w-xs"
-            />
-          </div>
-          <div className="flex-1 space-y-2">
-            <h3 className="font-semibold">2. Save to Database</h3>
-            <Button
-              onClick={handleUpload}
-              disabled={isLoading || parsedStudents.length === 0}
-              className="w-full sm:w-auto"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {isLoading
-                ? "Saving..."
-                : `Upload ${parsedStudents.length} Students`}
-            </Button>
-          </div>
+      {/* --- Upload Controls (Unchanged) --- */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 p-6 border rounded-lg bg-slate-50 dark:bg-gray-900">
+        <div className="flex-1 space-y-2">
+          <h3 className="font-semibold">1. Select Excel File</h3>
+          <Input
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileChange}
+            className="max-w-xs"
+          />
         </div>
-
-        {/* --- Message Display (Unchanged) --- */}
-        {message.text && (
-          <Alert
-            className="mb-6"
-            variant={message.type === "error" ? "destructive" : "default"}
+        <div className="flex-1 space-y-2">
+          <h3 className="font-semibold">2. Save to Database</h3>
+          <Button
+            onClick={handleUpload}
+            disabled={isLoading || parsedStudents.length === 0}
+            className="w-full sm:w-auto"
           >
-            {message.type === "success" ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <Terminal className="h-4 w-4" />
-            )}
-            <AlertTitle>
-              {message.type === "error" ? "Error" : "Success"}
-            </AlertTitle>
-            <AlertDescription>{message.text}</AlertDescription>
-          </Alert>
-        )}
+            <Upload className="mr-2 h-4 w-4" />
+            {isLoading
+              ? "Saving..."
+              : `Upload ${parsedStudents.length} Students`}
+          </Button>
+        </div>
+      </div>
 
-        {/* --- MODIFIED PREVIEW Table (for POST data) --- */}
-        {/* This table now shows the critical required fields */}
-        {parsedStudents.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Upload Preview</h2>
-            <div className="border rounded-lg">
-              <Table>
-                <TableCaption>
-                  Preview of {parsedStudents.length} students to be uploaded.
-                </TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>No</TableHead>
-                    <TableHead>Admission No.</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Class ID</TableHead>
-                    <TableHead>Date of Birth</TableHead>
-                    <TableHead>Father&apos;s Name</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parsedStudents.map((student, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">
-                        {student.admission_number}
-                      </TableCell>
-                      <TableCell>{student.student_name}</TableCell>
-                      <TableCell>{student.class_id}</TableCell>
-                      <TableCell>{student.date_of_birth}</TableCell>
-                      <TableCell>{student.father_name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
+      {/* --- Message Display (Unchanged) --- */}
+      {message.text && (
+        <Alert
+          className="mb-6"
+          variant={message.type === "error" ? "destructive" : "default"}
+        >
+          {message.type === "success" ? (
+            <CheckCircle className="h-4 w-4" />
+          ) : (
+            <Terminal className="h-4 w-4" />
+          )}
+          <AlertTitle>
+            {message.type === "error" ? "Error" : "Success"}
+          </AlertTitle>
+          <AlertDescription>{message.text}</AlertDescription>
+        </Alert>
+      )}
 
-        {/* --- ALL STUDENTS Table (for GET data) (Unchanged) --- */}
-        {/* This table correctly displays data from the GET route */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-semibold mb-4">
-            All Students in Database
-          </h2>
+      {/* --- MODIFIED PREVIEW Table (for POST data) --- */}
+      {/* This table now shows the critical required fields */}
+      {parsedStudents.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold mb-4">Upload Preview</h2>
           <div className="border rounded-lg">
             <Table>
               <TableCaption>
-                A list of all students currently in the database.
+                Preview of {parsedStudents.length} students to be uploaded.
               </TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>No</TableHead>
                   <TableHead>Admission No.</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Standard</TableHead>
-                  <TableHead>Community</TableHead>
-                  <TableHead>Caste Category</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Class ID</TableHead>
+                  <TableHead>Date of Birth</TableHead>
+                  <TableHead>Father&apos;s Name</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dbStudents.length > 0 ? (
-                  dbStudents.map((student, i) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">{i + 1}</TableCell>
-                      <TableCell>{student.admission_number}</TableCell>
-                      <TableCell className="font-medium">
-                        {student.student_name}
-                      </TableCell>
-                      <TableCell>{student.standard}</TableCell>
-                      <TableCell>{student.community}</TableCell>
-                      <TableCell>{student.caste_category}</TableCell>
-                      <TableCell>{student.status}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center">
-                      No students found.
+                {parsedStudents.map((student, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      {student.admission_number}
                     </TableCell>
+                    <TableCell>{student.student_name}</TableCell>
+                    <TableCell>{student.class_id}</TableCell>
+                    <TableCell>{student.date_of_birth}</TableCell>
+                    <TableCell>{student.father_name}</TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
         </div>
+      )}
+
+      {/* --- ALL STUDENTS Table (for GET data) (Unchanged) --- */}
+      {/* This table correctly displays data from the GET route */}
+      <div className="mt-12">
+        <h2 className="text-2xl font-semibold mb-4">
+          All Students in Database
+        </h2>
+        <div className="border rounded-lg">
+          <Table>
+            <TableCaption>
+              A list of all students currently in the database.
+            </TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>No</TableHead>
+                <TableHead>Admission No.</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Standard</TableHead>
+                <TableHead>Community</TableHead>
+                <TableHead>Caste Category</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dbStudents.length > 0 ? (
+                dbStudents.map((student, i) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{i + 1}</TableCell>
+                    <TableCell>{student.admission_number}</TableCell>
+                    <TableCell className="font-medium">
+                      {student.student_name}
+                    </TableCell>
+                    <TableCell>{student.standard}</TableCell>
+                    <TableCell>{student.community}</TableCell>
+                    <TableCell>{student.caste_category}</TableCell>
+                    <TableCell>{student.status}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    No students found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

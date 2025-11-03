@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AppShell } from "../pages/Sidebar";
 
 // app/staff-management/layout.tsx
 export default function StaffLayout({
@@ -8,21 +7,19 @@ export default function StaffLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AppShell>
-      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-6">
-          <Link href="/staff-management">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-200">
-              Staff Management
-            </h1>
-          </Link>
-          <p className="text-muted-foreground">
-            Add, view, and manage all staff members in the school.
-          </p>
-        </div>
-        {/* Page content will be rendered here */}
-        {children}
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="mb-6">
+        <Link href="/staff-management">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-200">
+            Staff Management
+          </h1>
+        </Link>
+        <p className="text-muted-foreground">
+          Add, view, and manage all staff members in the school.
+        </p>
       </div>
-    </AppShell>
+      {/* Page content will be rendered here */}
+      {children}
+    </div>
   );
 }

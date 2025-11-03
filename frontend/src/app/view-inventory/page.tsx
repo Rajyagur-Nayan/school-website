@@ -5,11 +5,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { gsap } from "gsap"; // --- 1. Import GSAP
-import {
-  Package, // --- 2. Import Icons
-  Search,
-  ArchiveX,
-} from "lucide-react";
+import { Search, ArchiveX } from "lucide-react";
 
 import {
   Card,

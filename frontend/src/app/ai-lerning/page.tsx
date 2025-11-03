@@ -1,7 +1,6 @@
 // import { getCurrentUser } from "@/lib/actions/auth.action";
 import React from "react";
 import Agent from "../pages/Agent";
-import { AppShell } from "../pages/Sidebar";
 
 const page = async () => {
   // const user = await getCurrentUser();
@@ -11,9 +10,7 @@ const page = async () => {
   // }
   return (
     <div>
-      <AppShell>
-        <Agent type="generate" userName={""} userId={""} />
-      </AppShell>
+      <Agent type="generate" userName={""} userId={""} />
     </div>
   );
 };
