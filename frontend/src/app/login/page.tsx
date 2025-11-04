@@ -4,7 +4,6 @@ import { useState, FormEvent } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 // Shadcn/ui Components
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ import {
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
-  const router = useRouter();
   const [isRegisterView, setIsRegisterView] = useState(false);
 
   // --- Login Form State ---

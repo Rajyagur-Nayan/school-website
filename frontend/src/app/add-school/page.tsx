@@ -167,6 +167,7 @@ export default function CollegesPage() {
       setColleges([response.data, ...colleges]);
     } catch (err: any) {
       toast.error("An error occurred.");
+      console.log(err);
     }
   };
 
