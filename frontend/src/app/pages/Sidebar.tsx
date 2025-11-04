@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -45,10 +45,11 @@ import { useAuth } from "./auth/AuthContext";
 // ---------------- MENU ITEMS ----------------
 const teacherItems = [
   {
-    title: "Admin Dashboard",
+    title: "Dashboard",
     icon: LayoutDashboard,
     href: "/admin-dashboard",
   },
+  { title: "Home", icon: House, href: "/home" },
 
   { title: "Add Student useing Excel", icon: Users, href: "/add-student" },
   { title: "Student admission", icon: Users, href: "/student-management" },
@@ -95,6 +96,7 @@ const parentItems = [
     icon: GraduationCap,
     href: "/student-dashboard",
   },
+  { title: "Home", icon: House, href: "/home" },
   { title: "School Information", icon: School, href: "/school-info" },
   { title: "Exam's", icon: ClipboardList, href: "/view-exam-report" },
   {
@@ -124,7 +126,14 @@ const parentItems = [
     href: "/ai-lerning",
   },
   { title: "View Holiday", icon: Umbrella, href: "/view-holidayes" },
-  { title: "Home", icon: House, href: "/home" },
+];
+
+const adminItems = [
+  {
+    title: "Admin Dashboard",
+    icon: LayoutDashboard,
+    href: "/admin-dashboard",
+  },
 ];
 
 // ---------------- SIDEBAR ----------------
@@ -136,7 +145,6 @@ function Sidebar({
   setIsOpen: (v: boolean) => void;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
 
   // ✅ Hooks must come first
   const [isHoverOpen, setIsHoverOpen] = useState(false);
@@ -148,13 +156,25 @@ function Sidebar({
   useEffect(() => {
     const role = localStorage.getItem("user_role");
     const sessionToken = localStorage.getItem("token");
+
+    // prevent infinite loop: only redirect if you're NOT already on "/"
     if (!role || !sessionToken) {
-      router.push("/");
+      if (window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
     } else {
       setUserRole(role);
       setToken(sessionToken);
     }
-  }, [router]);
+  }, []); // ✅ remove [router]
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("student_id");
+    localStorage.removeItem("user_role");
+    if (logout) logout();
+    window.location.replace("/");
+  };
 
   // ✅ Conditional rendering AFTER all hooks
   const hideSidebar =
@@ -162,15 +182,6 @@ function Sidebar({
   if (hideSidebar) {
     return null;
   }
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("student_id");
-    localStorage.removeItem("user_role");
-    if (logout) logout();
-    router.push("/");
-  };
-
   // ✅ Modified part: show parentItems if parent, teacherItems if teacher
   let sidebarLinks: any[] = [];
   if (userRole?.toLowerCase() === "parent") {
@@ -178,7 +189,7 @@ function Sidebar({
   } else if (userRole?.toLowerCase() === "teacher") {
     sidebarLinks = teacherItems;
   } else {
-    sidebarLinks = []; // no links if role not found
+    sidebarLinks = adminItems; // no links if role not found
   }
 
   return (
@@ -298,7 +309,6 @@ function Navbar({}: {
 }) {
   const { logout, user } = useAuth() as any;
   const { theme, setTheme } = useTheme();
-  const router = useRouter();
   const [userRole, setUserRole] = useState<string | null>(null);
 
   // --- Get token from cookies ---
@@ -307,20 +317,24 @@ function Navbar({}: {
   useEffect(() => {
     const role = localStorage.getItem("user_role");
     const sessionToken = localStorage.getItem("token");
+
+    // prevent infinite loop: only redirect if you're NOT already on "/"
     if (!role || !sessionToken) {
-      router.push("/login");
+      if (window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
     } else {
       setUserRole(role);
       setToken(sessionToken);
     }
-  }, [router]);
+  }, []); // ✅ remove [router]
 
   const handleLogout = () => {
-    localStorage.getItem("token");
-    localStorage.getItem("student_id");
+    localStorage.removeItem("token");
+    localStorage.removeItem("student_id");
     localStorage.removeItem("user_role");
     if (logout) logout();
-    router.push("/");
+    window.location.replace("/");
   };
 
   const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
@@ -360,7 +374,7 @@ function Navbar({}: {
               >
                 <Avatar className="h-10 w-10 border">
                   <AvatarImage
-                    src={user?.avatarUrl || "/user-avatar.png"}
+                    src={user?.avatarUrl || "/user-avtar.png"}
                     alt="User"
                   />
                   <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>

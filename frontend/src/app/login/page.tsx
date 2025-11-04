@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, FormEvent } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -39,31 +39,6 @@ export default function LoginPage() {
   const [registerError, setRegisterError] = useState("");
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
 
-  // ✅ --- AUTO LOGIN (VERIFY SESSION COOKIE) ---
-  useEffect(() => {
-    const verifySession = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/verify-session`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          // Store role if returned by backend, or fallback to parent
-          localStorage.setItem("user_role", data.user?.role || "parent");
-          toast.success("Session restored! Redirecting...");
-          router.push("/school-info");
-        }
-      } catch (err) {
-        console.warn("Session verification failed:", err);
-      }
-    };
-
-    verifySession();
-  }, [router]);
-
   // --- Login Form Submit Handler ---
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -85,7 +60,7 @@ export default function LoginPage() {
         localStorage.setItem("user_role", role || "parent");
 
         toast.success("Login successful! Redirecting...");
-        router.push("/school-info");
+        window.location.replace("/school-info");
       } else {
         const msg =
           "Login successful, but server returned an unexpected status.";

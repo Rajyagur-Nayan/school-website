@@ -131,6 +131,14 @@ const teacherItems = [
   },
 ];
 
+const adminItems = [
+  {
+    title: "Admin Dashboard",
+    icon: LayoutDashboard,
+    href: "/admin-dashboard",
+  },
+];
+
 export default function HomePage() {
   const router = useRouter(); // <-- MODIFIED: 2. Initialize router
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -144,7 +152,7 @@ export default function HomePage() {
     // <-- MODIFIED: 3. Add redirect logic -->
     if (!role) {
       // No role found, redirect to login
-      router.push("/login");
+      window.location.replace("/login");
     } else {
       // Role found, set state and show dashboard
       setUserRole(role);
@@ -158,6 +166,8 @@ export default function HomePage() {
       ? parentItems
       : userRole === "teacher"
       ? teacherItems
+      : userRole == "admin"
+      ? adminItems
       : []; // Default to empty array if no role matches
 
   // --- Conditional Rendering based on loading and role ---
