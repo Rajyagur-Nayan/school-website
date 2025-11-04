@@ -2,7 +2,6 @@
 
 // --- Modified imports: Added useRouter ---
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // <-- MODIFIED: 1. Import useRouter
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import React from "react";
@@ -140,25 +139,18 @@ const adminItems = [
 ];
 
 export default function HomePage() {
-  const router = useRouter(); // <-- MODIFIED: 2. Initialize router
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- useEffect to safely access localStorage and protect route ---
   useEffect(() => {
-    // This code runs only in the browser
     const role = localStorage.getItem("user_role");
-
-    // <-- MODIFIED: 3. Add redirect logic -->
     if (!role) {
-      // No role found, redirect to login
-      window.location.replace("/login");
+      window.location.replace("/");
     } else {
-      // Role found, set state and show dashboard
-      setUserRole(role);
       setIsLoading(false);
+      setUserRole(role);
     }
-  }, [router]); // Added router as a dependency
+  }, []); // Added router as a dependency
 
   // --- Determine which items to display ---
   const itemsToDisplay =

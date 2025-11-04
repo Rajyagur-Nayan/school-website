@@ -95,13 +95,18 @@ export default function UnifiedLoginPage() {
 
       const userRole =
         response.data?.admin?.role || response.data?.college?.role;
-
-      if (userRole) {
+      const token = response.data?.token;
+      if (userRole && token) {
         localStorage.setItem("user_role", userRole);
+        localStorage.setItem("token", token); // ✅ Store token in localStorage
         toast.success("Login successful!");
 
         const redirectUrl = userRole === "admin" ? "/admin-dashboard" : "/home";
-        window.location.href = redirectUrl;
+
+        // ✅ Give localStorage time to persist before redirecting
+        setTimeout(() => {
+          window.location.replace(redirectUrl); // use replace to avoid back-button loop
+        }, 300);
       } else {
         const msg = "Login successful, but no role returned from server.";
         toast.error(msg);

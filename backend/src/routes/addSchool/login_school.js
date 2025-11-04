@@ -33,7 +33,7 @@ router.post("/", async (req, res) => {
 
     const college = rows[0];
 
-    // ✅ ADDED: Log the object to debug
+    // ✅ Optional: Debug log
     console.log("Database result for college:", college);
 
     // 5️⃣ Compare hashed password
@@ -49,31 +49,19 @@ router.post("/", async (req, res) => {
     }
 
     // 7️⃣ Success — All details match
-    // --- NEW: Token & Cookie Logic ---
-    if (college.role === "teacher") {
-      // 8️⃣ Create JWT Payload
-      const payload = {
-        id: college.id,
-        email: college.email,
-        role: college.role,
-      };
+    // --- Generate JWT Token ---
+    const payload = {
+      id: college.id,
+      email: college.email,
+      role: college.role,
+    };
 
-      // 9️⃣ Sign the Token
-      // Make sure you have JWT_SECRET in your .env file
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "7d", // ✅ CHANGED: Token expires in 7 days
-      });
+    // 8️⃣ Sign the Token (expires in 7 days)
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
-      // 🔟 Set Token in HTTP-Only Cookie
-      res.cookie("token", token, {
-        secure: "production", // Send only over HTTPS in production
-        maxAge: 604800000, // ✅ CHANGED: 7 days in milliseconds
-        // path: "/" // Cookie is valid for the entire site
-      });
-    }
-    // --- End of New Logic ---
-
-    // 1️⃣1️⃣ Send final success response
+    // 9️⃣ Return token in JSON (no cookies)
     return res.status(200).json({
       message: "Login successful!",
       college: {
@@ -82,6 +70,7 @@ router.post("/", async (req, res) => {
         email: college.email,
         role: college.role,
       },
+      token, // ✅ Added token here
     });
   } catch (error) {
     console.error("❌ Login error:", error);
