@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
 app.use("/signup", require("./src/routes/user/signup.js"));
 app.use("/login", require("./src/routes/user/login.js"));
 app.use("/profile", require("./src/routes/user/profile.js"));
-
+app.use("/faculty_register", require("./src/routes/faculty/register.js"));
 app.use("/add_class", require("./src/routes/addition/addClass.js"));
 app.use("/add_period", require("./src/routes/addition/addPeriod.js"));
 app.use("/add_subject", require("./src/routes/addition/addSubject.js"));

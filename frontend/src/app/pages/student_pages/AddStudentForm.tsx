@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { Loader2, User, Users } from "lucide-react";
+import { Loader2, User } from "lucide-react"; // Removed 'Users'
 import {
   Card,
   CardContent,
@@ -48,7 +48,7 @@ export function AddStudentForm() {
     blood_group: "",
     nationality: "Indian",
     religion: "",
-    cast_category: "",
+    caste_category: "", // --- CORRECTED TYPO ---
     community: "",
     class_id: "",
     admission_date: format(new Date(), "yyyy-MM-dd"),
@@ -60,24 +60,16 @@ export function AddStudentForm() {
     father_name: "",
     mother_name: "",
     parent_primary_phone: "",
-    parent_secondary_phone: "", // --- 1. ADDED ---
-    parent_email: "", // --- 1. ADDED ---
+    parent_secondary_phone: "",
+    parent_email: "",
   });
   const [dob, setDob] = useState<Date>();
 
   // State for files
   const [studentPhoto, setStudentPhoto] = useState<File | null>(null);
-  const [fatherPhoto, setFatherPhoto] = useState<File | null>(null);
-  const [motherPhoto, setMotherPhoto] = useState<File | null>(null);
 
   // State for photo previews
   const [studentPhotoPreview, setStudentPhotoPreview] = useState<string | null>(
-    null
-  );
-  const [fatherPhotoPreview, setFatherPhotoPreview] = useState<string | null>(
-    null
-  );
-  const [motherPhotoPreview, setMotherPhotoPreview] = useState<string | null>(
     null
   );
 
@@ -141,14 +133,6 @@ export function AddStudentForm() {
         setStudentPhoto(file);
         if (studentPhotoPreview) URL.revokeObjectURL(studentPhotoPreview);
         setStudentPhotoPreview(previewUrl);
-      } else if (name === "father_photo") {
-        setFatherPhoto(file);
-        if (fatherPhotoPreview) URL.revokeObjectURL(fatherPhotoPreview);
-        setFatherPhotoPreview(previewUrl);
-      } else if (name === "mother_photo") {
-        setMotherPhoto(file);
-        if (motherPhotoPreview) URL.revokeObjectURL(motherPhotoPreview);
-        setMotherPhotoPreview(previewUrl);
       }
     }
   };
@@ -168,8 +152,6 @@ export function AddStudentForm() {
     }
     // Append files
     if (studentPhoto) data.append("student_photo", studentPhoto);
-    if (fatherPhoto) data.append("father_photo", fatherPhoto);
-    if (motherPhoto) data.append("mother_photo", motherPhoto);
 
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/add_student`, data, {
@@ -223,38 +205,8 @@ export function AddStudentForm() {
                       className="text-xs"
                     />
                   </div>
-                  <div className="flex flex-col items-center space-y-2">
-                    <Label htmlFor="father_photo">Father&apos;s Photo</Label>
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={fatherPhotoPreview || ""} />
-                      <AvatarFallback>
-                        <Users className="h-10 w-10" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <Input
-                      id="father_photo"
-                      name="father_photo"
-                      type="file"
-                      onChange={handleFileChange}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div className="flex flex-col items-center space-y-2">
-                    <Label htmlFor="mother_photo">Mother&apos;s Photo</Label>
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src={motherPhotoPreview || ""} />
-                      <AvatarFallback>
-                        <Users className="h-10 w-10" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <Input
-                      id="mother_photo"
-                      name="mother_photo"
-                      type="file"
-                      onChange={handleFileChange}
-                      className="text-xs"
-                    />
-                  </div>
+
+                  {/* --- FATHER AND MOTHER PHOTO SECTIONS REMOVED --- */}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -357,9 +309,9 @@ export function AddStudentForm() {
                   <div className="space-y-2">
                     <Label>Caste Category</Label>
                     <Select
-                      name="cast_category"
-                      onValueChange={(value) =>
-                        handleSelectChange("cast_category", value)
+                      name="caste_category" // --- CORRECTED NAME ---
+                      onValueChange={
+                        (value) => handleSelectChange("caste_category", value) // --- CORRECTED NAME ---
                       }
                     >
                       <SelectTrigger>
@@ -458,7 +410,6 @@ export function AddStudentForm() {
                   </div>
                 </div>
 
-                {/* --- 2. ADDED NEW FIELDS IN A GRID --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Parent&apos;s Primary Phone</Label>
@@ -489,7 +440,6 @@ export function AddStudentForm() {
                     />
                   </div>
                 </div>
-                {/* ------------------------------------ */}
 
                 <div className="space-y-2">
                   <Label>Address Line 1</Label>
