@@ -5,31 +5,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Users,
-  UserCog,
   Megaphone,
-  IndianRupee,
   CalendarDays,
-  Bot,
-  School,
   UserCheck,
-  Warehouse,
-  FileQuestion,
   ClipboardList,
-  Umbrella,
-  BrainCircuit,
-  GraduationCap,
-  UmbrellaIcon,
-  Plus,
-  Sun,
-  Moon,
   LogOut,
   Menu,
   X,
-  House,
+  UserCog,
+  Plus,
+  UmbrellaIcon,
+  Users,
+  LayoutDashboard,
+  IndianRupee,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,16 +32,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "./auth/AuthContext";
 
 // ---------------- MENU ITEMS ----------------
+
 const teacherItems = [
   {
-    title: "Dashboard",
+    title: " Dashboard",
     icon: LayoutDashboard,
     href: "/admin-dashboard",
   },
-  { title: "Home", icon: House, href: "/home" },
 
   { title: "Add Student useing Excel", icon: Users, href: "/add-student" },
-  { title: "Student admission", icon: Users, href: "/student-management" },
   { title: "Fee's", icon: IndianRupee, href: "/fee-management" },
   { title: "Exam's", icon: ClipboardList, href: "/exam-management" },
   {
@@ -72,67 +60,12 @@ const teacherItems = [
   },
   { title: "Staff Management", icon: UserCog, href: "/staff-management" },
   { title: "Add Department", icon: Plus, href: "/add-school" },
-  {
-    title: "Exam paper Gunration",
-    icon: FileQuestion,
-    href: "/exam-paper-generator",
-  },
+
   { title: "Events", icon: Megaphone, href: "/event-management" },
   {
     title: "Holidayes",
     icon: UmbrellaIcon,
     href: "/holiday-management",
-  },
-  {
-    title: "Inventory",
-    icon: Warehouse,
-    href: "/inventory-management",
-  },
-];
-
-const parentItems = [
-  {
-    title: "Student Dashboard",
-    icon: GraduationCap,
-    href: "/student-dashboard",
-  },
-  { title: "Home", icon: House, href: "/home" },
-  { title: "School Information", icon: School, href: "/school-info" },
-  { title: "Exam's", icon: ClipboardList, href: "/view-exam-report" },
-  {
-    title: "Attendance",
-    icon: UserCheck,
-    href: "/view-attendance-report",
-  },
-  {
-    title: "Timetable",
-    icon: CalendarDays,
-    href: "/view-timetable",
-  },
-  {
-    title: "Ai Chat Bot",
-    icon: Bot,
-    href: "/ai-chatbot",
-  },
-  { title: "Events", icon: Megaphone, href: "/view_event" },
-  {
-    title: "Inventory",
-    icon: Warehouse,
-    href: "/view-inventory",
-  },
-  {
-    title: "AI-Lerning",
-    icon: BrainCircuit,
-    href: "/ai-lerning",
-  },
-  { title: "View Holiday", icon: Umbrella, href: "/view-holidayes" },
-];
-
-const adminItems = [
-  {
-    title: "Admin Dashboard",
-    icon: LayoutDashboard,
-    href: "/admin-dashboard",
   },
 ];
 
@@ -182,15 +115,9 @@ function Sidebar({
   if (hideSidebar) {
     return null;
   }
-  // ✅ Modified part: show parentItems if parent, teacherItems if teacher
-  let sidebarLinks: any[] = [];
-  if (userRole?.toLowerCase() === "parent") {
-    sidebarLinks = parentItems;
-  } else if (userRole?.toLowerCase() === "teacher") {
-    sidebarLinks = teacherItems;
-  } else {
-    sidebarLinks = adminItems; // no links if role not found
-  }
+
+  // --- ONLY show parentItems when the stored role is "parent" ---
+  const sidebarLinks = teacherItems;
 
   return (
     <>
@@ -302,109 +229,6 @@ function Sidebar({
   );
 }
 
-// ---------------- NAVBAR ----------------
-function Navbar({}: {
-  isSidebarOpen: boolean;
-  setIsSidebarOpen: (isOpen: boolean) => void;
-}) {
-  const { logout, user } = useAuth() as any;
-  const { theme, setTheme } = useTheme();
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  // --- Get token from cookies ---
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const role = localStorage.getItem("user_role");
-    const sessionToken = localStorage.getItem("token");
-
-    // prevent infinite loop: only redirect if you're NOT already on "/"
-    if (!role || !sessionToken) {
-      if (window.location.pathname !== "/") {
-        window.location.replace("/");
-      }
-    } else {
-      setUserRole(role);
-      setToken(sessionToken);
-    }
-  }, []); // ✅ remove [router]
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("student_id");
-    localStorage.removeItem("user_role");
-    if (logout) logout();
-    window.location.replace("/");
-  };
-
-  const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
-
-  return (
-    <header className="hidden lg:flex fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 items-center justify-between px-6 shadow-md z-40">
-      {/* --- Left: Logo --- */}
-      <Link href="/home" className="flex items-center gap-3">
-        <div className="relative w-12 h-12 flex-shrink-0">
-          <Image
-            src="/school-logo.jpg"
-            alt="Logo"
-            fill
-            className="object-contain rounded-md"
-          />
-        </div>
-        <span className="font-semibold text-lg text-slate-800 dark:text-slate-200">
-          S.M.V High School
-        </span>
-      </Link>
-
-      {/* --- Right: Controls --- */}
-      <div className="flex items-center gap-3">
-        {/* Theme Toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </Button>
-
-        {/* --- Profile Dropdown --- */}
-        {token && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative h-10 w-10 rounded-full"
-              >
-                <Avatar className="h-10 w-10 border">
-                  <AvatarImage
-                    src={user?.avatarUrl || "/user-avtar.png"}
-                    alt="User"
-                  />
-                  <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent className="w-56" align="end">
-              <DropdownMenuLabel>
-                <div>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {userRole || "No role"}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={handleLogout}
-                className="text-red-600 cursor-pointer"
-              >
-                <LogOut className="mr-2 h-4 w-4" /> Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-    </header>
-  );
-}
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -415,12 +239,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Section */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Navbar - fixed at top */}
-        <Navbar
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-        />
-
         {/* Main Content */}
         <main
           className={`

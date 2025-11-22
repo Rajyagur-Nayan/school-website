@@ -192,7 +192,6 @@ export default function UnifiedLoginPage() {
                   <SelectValue placeholder="Select your role..." />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                  <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
                 </SelectContent>
               </Select>

@@ -1,12 +1,12 @@
 import React from "react";
 
-import LoginPage from "./login/page";
+import UnifiedLoginPage from "./admin/login/page";
 
 const page = () => {
   return (
     <div>
       {/* <HomePage /> */}
-      <LoginPage />
+      <UnifiedLoginPage />
     </div>
   );
 };
