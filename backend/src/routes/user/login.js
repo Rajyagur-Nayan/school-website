@@ -41,7 +41,7 @@ router.post("/", async (req, res) => {
     }
 
     const studentRes = await pool.query(
-      "SELECT id FROM student WHERE admission_number = $1",
+      "SELECT id, class_id FROM student WHERE admission_number = $1",
       [grNo]
     );
 
@@ -68,6 +68,7 @@ router.post("/", async (req, res) => {
       token: token,
       student_id: studentId,
       role: user.role,
+      class_id: studentRes.rows[0].class_id
     }); // Send user data including role
   } catch (err) {
     console.error("Login error:", err);
