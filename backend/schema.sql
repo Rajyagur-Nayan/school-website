@@ -225,7 +225,8 @@ CREATE TABLE exam_schedule (
     -- Foreign keys to link with other tables
     class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-    
+    faculty_id INTEGER NOT NULL REFERENCES faculty(id) ON DELETE CASCADE,
+
     -- Scheduling Information
     exam_date DATE NOT NULL,
     start_time TIME NOT NULL,
