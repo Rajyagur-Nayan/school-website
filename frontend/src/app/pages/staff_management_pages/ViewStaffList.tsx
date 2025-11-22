@@ -1,10 +1,11 @@
-// components/staff/ViewStaffList.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { Pencil, Trash2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,6 +13,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+
 import {
   Table,
   TableBody,
@@ -20,146 +22,193 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// Define a type for the staff data from your API
-interface Staff {
+interface Faculty {
   id: number;
   f_name: string;
   l_name: string;
   email: string;
+  phone_number: string;
+  aadhar_number: string;
+  address: string;
   role: string;
-  // Add other fields like 'subject' or 'avatar' if your API provides them
-  // For this example, we'll assume they might not exist and handle that
-  subject?: string;
-  avatar?: string;
+  joining_date: string;
 }
 
 export function ViewStaffList() {
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // --- Form State ---
+  const [, setFName] = useState<string>("");
+  const [, setLName] = useState<string>("");
+  const [, setEmail] = useState<string>("");
+  const [, setPhoneNumber] = useState<string>("");
+  const [, setAadharNumber] = useState<string>("");
+  const [, setAddress] = useState<string>("");
+  const [, setRole] = useState<string>("");
+  const [, setJoiningDate] = useState<Date | undefined>(undefined);
 
-  // GET: Fetch staff data from the API on component mount
+  // --- Component Logic State ---
+  const [facultyList, setFacultyList] = useState<Faculty[]>([]);
+  const [, setIsEditMode] = useState(false);
+  const [, setSelectedFacultyId] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [facultyToDelete, setFacultyToDelete] = useState<Faculty | null>(null);
+
+  // --- API Calls ---
+  const fetchFaculty = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/faculty_register`,
+        { withCredentials: true }
+      );
+      setFacultyList(response.data);
+    } catch (error) {
+      console.error("Error fetching faculty list:", error);
+      toast.error("Could not fetch faculty list.");
+    }
+  };
+
   useEffect(() => {
-    const fetchStaff = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/faculty_register`,
-          { withCredentials: true }
-        );
-        setStaffList(response.data);
-      } catch (err) {
-        console.error("Failed to fetch staff list:", err);
-        setError("Could not load staff data. Please try again later.");
-        toast.error("Failed to fetch staff list.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStaff();
+    fetchFaculty();
   }, []);
 
-  // Filter the staff list based on the search term
-  const filteredStaff = staffList.filter((staff) => {
-    const fullName = `${staff.f_name} ${staff.l_name}`;
-    return (
-      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // --- Table Actions ---
+  const handleEdit = (faculty: Faculty) => {
+    setIsEditMode(true);
+    setSelectedFacultyId(faculty.id);
+    setFName(faculty.f_name || "");
+    setLName(faculty.l_name || "");
+    setEmail(faculty.email || "");
+    setPhoneNumber(faculty.phone_number || "");
+    setAadharNumber(faculty.aadhar_number || "");
+    setAddress(faculty.address || "");
+    setRole(faculty.role || "");
+    setJoiningDate(
+      faculty.joining_date ? new Date(faculty.joining_date) : undefined
     );
-  });
+    window.scrollTo(0, 0);
+  };
+
+  const handleDeleteClick = (faculty: Faculty) => {
+    setFacultyToDelete(faculty);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!facultyToDelete) return;
+
+    try {
+      await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_URL}/faculty_register/${facultyToDelete.id}`,
+        { withCredentials: true }
+      );
+      toast.success("Faculty member deleted successfully!");
+      fetchFaculty();
+    } catch (error) {
+      console.error("Error deleting faculty:", error);
+      toast.error("Failed to delete faculty member.");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setFacultyToDelete(null);
+    }
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <div>
-            <CardTitle>All Staff Members</CardTitle>
-            <CardDescription>
-              A list of all staff currently in the system.
-            </CardDescription>
-          </div>
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Subject</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+    <div className="space-y-8">
+      {/* Faculty List Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Registered Staff</CardTitle>
+          <CardDescription>
+            A list of all staff members currently in the system.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
-                  Loading staff data...
-                </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : error ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center text-red-500">
-                  {error}
-                </TableCell>
-              </TableRow>
-            ) : filteredStaff.length > 0 ? (
-              filteredStaff.map((staff) => (
-                <TableRow key={staff.id}>
-                  <TableCell className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage
-                        src={staff.avatar}
-                        alt={`${staff.f_name} ${staff.l_name}`}
-                      />
-                      <AvatarFallback>
-                        {staff.f_name[0] || ""}
-                        {staff.l_name[0] || ""}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">
-                        {staff.f_name} {staff.l_name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {staff.email}
-                      </div>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {facultyList.length > 0 ? (
+                facultyList.map((faculty) => (
+                  <TableRow key={faculty.id}>
+                    <TableCell className="font-medium">
+                      {faculty.f_name} {faculty.l_name}
+                    </TableCell>
+                    <TableCell>{faculty.email}</TableCell>
+                    <TableCell className="capitalize">{faculty.role}</TableCell>
+                    <TableCell>{faculty.phone_number}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(faculty)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(faculty)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    No staff members found.
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {staff.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{staff.subject || "N/A"}</TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center">
-                  No staff members found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              staff member{" "}
+              <span className="font-semibold">
+                {facultyToDelete?.f_name} {facultyToDelete?.l_name}
+              </span>{" "}
+              from the records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

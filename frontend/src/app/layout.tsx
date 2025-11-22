@@ -3,9 +3,9 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
-import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "./pages/auth/AuthContext";
 import { AppShell } from "./pages/Sidebar";
+import { Navbar } from "./pages/Navbar";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -24,12 +24,11 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased flex flex-col min-h-screen`}
         // --- END FIX ---
       >
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <AuthProvider>
-            <Toaster />
-            <AppShell>{children}</AppShell>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <Toaster />
+          <Navbar />
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );

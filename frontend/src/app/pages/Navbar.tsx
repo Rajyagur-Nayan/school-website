@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import Cookies from "js-cookie";
-import { LogOut, Sun, Moon, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,175 +14,106 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import { useTheme } from "next-themes";
 import { useAuth } from "./auth/AuthContext";
-// --- Removed LoginDialog and RegisterDialog imports ---
 
 export function Navbar() {
-  const { isAuthenticated, logout, user } = useAuth() as any;
-  const { theme, setTheme } = useTheme();
+  const { logout, user } = useAuth() as any;
   const router = useRouter();
-  usePathname();
 
-  // --- Removed state for dialogs ---
-
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [teacherToken, setTeacherToken] = useState<string | null>(null);
-
-  // Function to check auth state
-  const checkTeacherAuth = () => {
-    const role = localStorage.getItem("user_role");
-    const token = Cookies.get("token");
-    setUserRole(role);
-    setTeacherToken(token || null);
+  // Unified logout handler: call auth logout then navigate to home
+  const handleLogout = async () => {
+    try {
+      if (logout) await logout();
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      // ensure any client side tokens/localStorage cleared by auth or here if needed
+      // localStorage.clear(); // <-- don't clear everything unless you want to
+      router.push("/");
+    }
   };
-
-  // Use useEffect to check auth on initial load
-  useEffect(() => {
-    checkTeacherAuth();
-  }, []);
-
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-
-  // --- Unified logout function (No Change) ---
-  const handleUnifiedLogout = () => {
-    logout();
-    Cookies.remove("token");
-    Cookies.remove("student_id");
-    localStorage.removeItem("user_role");
-    setUserRole(null);
-    setTeacherToken(null);
-    router.push("/");
-  };
-
-  const UserNav = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-10 w-10 rounded-full"
-          aria-label="Open user menu"
-        >
-          <Avatar className="h-10 w-10 border">
-            <AvatarImage src={user?.avatarUrl} alt={user?.name || "User"} />
-            <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={handleUnifiedLogout}
-          className="cursor-pointer text-red-600 focus:text-red-600"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  const TeacherNav = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-10 w-10 rounded-full"
-          aria-label="Open teacher menu"
-        >
-          <Avatar className="h-10 w-10 border bg-muted">
-            <AvatarFallback>
-              <User className="h-5 w-5" />
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel>
-          <p className="text-sm font-medium leading-none">
-            {userRole
-              ? userRole.charAt(0).toUpperCase() + userRole.slice(1)
-              : "Staff"}
-          </p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={handleUnifiedLogout}
-          className="cursor-pointer text-red-600 focus:text-red-600"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 
   return (
-    <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 shadow-sm">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="relative w-10 h-10">
-              <Image
-                src="/school-logo.jpg"
-                alt="School Logo"
-                layout="fill"
-                objectFit="contain"
-              />
-            </div>
-            <Link
-              href={userRole === "teacher" && teacherToken ? "/home" : "/home"}
-              className="hidden font-bold sm:inline-block"
-            >
-              S.M.V High School
-            </Link>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 shadow-sm">
+      <div className="container flex h-16 items-center justify-between">
+        {/* Left: Logo + Title */}
+        <div className="flex items-center space-x-4">
+          <div className="relative w-10 h-10">
+            <Image
+              src="/school-logo.jpg"
+              alt="School Logo"
+              fill
+              className="object-contain"
+            />
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-            >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            </Button>
-
-            {/* --- CORRECTED Display Logic --- */}
-            {
-              // Case 1: A "student" is logged in (using useAuth context)
-              isAuthenticated && user ? (
-                <UserNav />
-              ) : // Case 2: A "teacher" is logged in (using local state)
-              userRole === "teacher" && teacherToken ? (
-                <TeacherNav />
-              ) : // Case 3: No one is logged in (show nothing)
-              userRole === "parent" && teacherToken ? (
-                <TeacherNav />
-              ) : null
-              // This is where you would put your <LoginDialog />
-              // and <RegisterDialog /> buttons if you add them back
-            }
-          </div>
+          <Link href="/home" className="hidden font-bold sm:inline-block">
+            S.M.V High School
+          </Link>
         </div>
-      </header>
-    </>
+
+        {/* Right: Theme toggle + Profile dialog (single) */}
+        <div className="flex items-center space-x-2">
+          {/* Profile dialog: shown regardless of role/token.
+              It will display user's name/email if available from useAuth(). */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full"
+                aria-label="Open profile menu"
+              >
+                <Avatar className="h-10 w-10 border">
+                  <AvatarImage
+                    src={user?.avatarUrl || "/user-avtar.png"}
+                    alt={user?.name || "User"}
+                  />
+                  <AvatarFallback>
+                    {(user?.name || "U").charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user?.name || "User"}
+                  </p>
+                  {user?.email && (
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  )}
+                </div>
+              </DropdownMenuLabel>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onSelect={() => {
+                  // Replace with actual profile page route if you have one
+                  router.push("/profile");
+                }}
+                className="cursor-pointer"
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onSelect={handleLogout}
+                className="cursor-pointer text-red-600 focus:text-red-600"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
   );
 }

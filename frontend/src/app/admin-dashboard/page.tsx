@@ -11,8 +11,8 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-// --- MODIFIED: Added List and Loader2 icons ---
-import { Dot, List, Loader2 } from "lucide-react"; // Ensure List & Loader2 are imported
+// --- Icons ---
+import { Dot, List, Loader2 } from "lucide-react";
 import {
   ResponsiveContainer,
   XAxis,
@@ -25,15 +25,12 @@ import {
   Cell,
   BarChart,
   Bar,
-  LineChart,
-  Line,
 } from "recharts";
 
 // --- ADDED: ScrollArea for the list ---
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // --- TypeScript Type Definitions ---
-
 interface StatCardProps {
   title: string;
   value: string;
@@ -52,10 +49,7 @@ interface PerformanceData {
   name: string;
   avgScore: number;
 }
-interface IncomeData {
-  month: string;
-  income: number;
-}
+
 interface EventData {
   title: string;
   time: string;
@@ -95,6 +89,7 @@ interface ApiIncomeReport {
   month: string;
   income: string;
 }
+
 interface ApiUpcomingEvent {
   type: string;
   title: string;
@@ -103,16 +98,17 @@ interface ApiUpcomingEvent {
   time: string;
 }
 // --- ADDED: API Interface for Exam Data ---
-// --- AFTER ---
 interface ApiUpcomingExam {
   subject_name: string;
   class_name: string;
   exam_date: string;
   start_time: string;
-  total_marks: number; // <-- ADDED THIS (based on your API data "total_marks": 30)
+  total_marks: number;
 }
 
-// --- Component Definitions ---
+// ---------------------------------
+// --- Subcomponents / Charts ----
+// ---------------------------------
 
 // 📊 Stats Section
 const StatsCards: FC<{ stats: StatCardProps[] }> = ({ stats }) => {
@@ -188,7 +184,7 @@ const StudentGenderChart: FC<{ genderData: GenderData[] }> = ({
   );
 };
 
-// 📈 Daily Attendance Chart
+// 📈 Daily Attendance Chart (students)
 const DailyAttendanceChart: FC<{ attendanceData: AttendanceData[] }> = ({
   attendanceData,
 }) => {
@@ -205,10 +201,8 @@ const DailyAttendanceChart: FC<{ attendanceData: AttendanceData[] }> = ({
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="present" fill="#22c55e" radius={[4, 4, 0, 0]} />{" "}
-            {/* Green-500 */}
-            <Bar dataKey="absent" fill="#ef4444" radius={[4, 4, 0, 0]} />{" "}
-            {/* Red-500 */}
+            <Bar dataKey="present" fill="#22c55e" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="absent" fill="#ef4444" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -233,8 +227,7 @@ const FacultyPerformanceChart: FC<{ facultyPerfData: PerformanceData[] }> = ({
             <XAxis dataKey="name" />
             <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
             <Tooltip formatter={(v: number) => `${v.toFixed(2)}%`} />
-            <Bar dataKey="avgScore" fill="#3b82f6" radius={[4, 4, 0, 0]} />{" "}
-            {/* Blue-500 */}
+            <Bar dataKey="avgScore" fill="#3b82f6" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -259,8 +252,7 @@ const ClassPerformanceChart: FC<{ classPerfData: PerformanceData[] }> = ({
             <XAxis dataKey="name" />
             <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
             <Tooltip formatter={(v: number) => `${v.toFixed(2)}%`} />
-            <Bar dataKey="avgScore" fill="#10b981" radius={[4, 4, 0, 0]} />{" "}
-            {/* Emerald-500 */}
+            <Bar dataKey="avgScore" fill="#10b981" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -268,31 +260,35 @@ const ClassPerformanceChart: FC<{ classPerfData: PerformanceData[] }> = ({
   );
 };
 
-// 💰 Financial Chart
-const FinancialPerformanceChart: FC<{ financeData: IncomeData[] }> = ({
-  financeData,
-}) => {
+// PROFESSOR ATTENDANCE CHART (right-side)
+const ProfessorAttendanceChart: FC<{ data: AttendanceData[] }> = ({ data }) => {
   return (
     <Card className="rounded-2xl shadow-md bg-white dark:bg-slate-900">
       <CardHeader>
-        <CardTitle>Finance</CardTitle>
+        <CardTitle>Professor Attendance</CardTitle>
+        <CardDescription>Present / Absent (this week)</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={financeData}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="month" />
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.08} />
+            <XAxis dataKey="name" />
             <YAxis />
-            <Tooltip contentStyle={{ borderRadius: 8 }} />
+            <Tooltip />
             <Legend />
-            <Line
-              type="monotone"
-              dataKey="income"
-              stroke="#6366f1" // Indigo-500
-              strokeWidth={2}
-              dot={false}
+            <Bar
+              dataKey="present"
+              name="Present"
+              fill="#16a34a"
+              radius={[4, 4, 0, 0]}
             />
-          </LineChart>
+            <Bar
+              dataKey="absent"
+              name="Absent"
+              fill="#ef4444"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
@@ -381,18 +377,16 @@ const EventsCard: FC<{ eventsData: EventData[] }> = ({ eventsData }) => {
 };
 
 // --- ADDED: Upcoming Exams Card Component ---
-// 📝 Upcoming Exams Card
 const UpcomingExamsCard: FC<{ examsData: ExamData[] }> = ({ examsData }) => {
   return (
     <Card className="rounded-2xl shadow-md bg-white dark:bg-slate-900">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <List className="h-5 w-5" /> {/* Using List icon as imported */}
+          <List className="h-5 w-5" />
           Upcoming Exams
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Use ScrollArea for potentially long lists */}
         <ScrollArea className="h-[200px] pr-4">
           <div className="space-y-4">
             {examsData.length > 0 ? (
@@ -409,7 +403,7 @@ const UpcomingExamsCard: FC<{ examsData: ExamData[] }> = ({ examsData }) => {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {exam.exam_date}
+                      {exam.exam_date} • {exam.exam_time}
                     </p>
                   </div>
                 </div>
@@ -436,10 +430,13 @@ const SchoolDashboardPage: FC = () => {
   const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
   const [facultyPerfData, setFacultyPerfData] = useState<PerformanceData[]>([]);
   const [classPerfData, setClassPerfData] = useState<PerformanceData[]>([]);
-  const [financeData, setFinanceData] = useState<IncomeData[]>([]);
   const [eventsData, setEventsData] = useState<EventData[]>([]);
   // --- ADDED: State for Exams Data ---
   const [examsData, setExamsData] = useState<ExamData[]>([]);
+  // --- ADDED: State for Professor Attendance ---
+  const [profAttendanceData, setProfAttendanceData] = useState<
+    AttendanceData[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -449,10 +446,6 @@ const SchoolDashboardPage: FC = () => {
       "bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-200",
     teachers:
       "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200",
-    admissions:
-      "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200",
-    averageIncome:
-      "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200",
   };
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -466,7 +459,6 @@ const SchoolDashboardPage: FC = () => {
       const config = { withCredentials: true };
 
       try {
-        // --- MODIFIED: Added examsRes to Promise.all ---
         const [
           summaryRes,
           genderRes,
@@ -475,7 +467,8 @@ const SchoolDashboardPage: FC = () => {
           classPerfRes,
           incomeRes,
           eventsRes,
-          examsRes, // <-- ADDED
+          examsRes,
+          profAttendanceRes,
         ] = await Promise.all([
           axios.get<ApiSummaryCards>(`${baseUrl}/summary-cards`, config),
           axios.get<ApiGenderDist[]>(`${baseUrl}/gender-distribution`, config),
@@ -491,13 +484,15 @@ const SchoolDashboardPage: FC = () => {
             `${baseUrl}/class-performance`,
             config
           ),
-          axios.get<ApiIncomeReport[]>(`${baseUrl}/income-report`, config),
+          axios.get<ApiIncomeReport[]>(`${baseUrl}/income-report`, config), // incomeRes (keep if present server-side)
           axios.get<ApiUpcomingEvent[]>(`${baseUrl}/upcoming-events`, config),
-          // --- ADDED: New GET route for exams ---
           axios.get<ApiUpcomingExam[]>(`${baseUrl}/upcoming-exams`, config),
+          axios.get<ApiAttendanceReport[]>(
+            `${baseUrl}/attendance-report`,
+            config
+          ), // profAttendanceRes
         ]);
 
-        // Process data...
         // Stats
         const summaryData = summaryRes.data;
         const formattedStats: StatCardProps[] = [
@@ -511,31 +506,27 @@ const SchoolDashboardPage: FC = () => {
             value: summaryData.teachers.toString(),
             color: cardStyles.teachers,
           },
-          {
-            title: "Admissions",
-            value: summaryData.admissions.toString(),
-            color: cardStyles.admissions,
-          },
         ];
         const allStatCards: StatCardProps[] = [...formattedStats];
+
         // Gender
         if (genderRes.data?.length)
           setGenderData(
             genderRes.data.map((i) => ({
               name: i.gender,
-              value: parseInt(i.count),
+              value: parseInt(i.count, 10),
             }))
           );
-        // Attendance
+
+        // Attendance (faculty-attendance-report -> used in main charts)
         if (attendanceRes.data?.length)
           setAttendanceData(
             attendanceRes.data.map((i) => ({
               name: i.day.substring(0, 3),
-              present: parseInt(i.present),
-              absent: parseInt(i.absent),
+              present: parseInt(i.present ?? "0", 10),
+              absent: parseInt(i.absent ?? "0", 10),
             }))
           );
-        console.log(attendanceRes.data);
 
         // Faculty Perf
         if (facultyPerfRes.data?.length)
@@ -545,6 +536,7 @@ const SchoolDashboardPage: FC = () => {
               avgScore: parseFloat(i.average_score),
             }))
           );
+
         // Class Perf
         if (classPerfRes.data?.length)
           setClassPerfData(
@@ -553,57 +545,42 @@ const SchoolDashboardPage: FC = () => {
               avgScore: parseFloat(i.average_percentage),
             }))
           );
-        // Income
-        if (incomeRes.data?.length) {
-          const formattedIncome = incomeRes.data.map((i) => ({
-            month: i.month.substring(0, 3),
-            income: parseInt(i.income),
-          }));
-          setFinanceData(formattedIncome);
-          const totalIncome = formattedIncome.reduce(
-            (acc, i) => acc + i.income,
-            0
-          );
-          const averageIncome = formattedIncome.length
-            ? totalIncome / formattedIncome.length
-            : 0;
-          allStatCards.push({
-            title: "Avg. Income",
-            value: averageIncome.toLocaleString("en-IN", {
-              style: "currency",
-              currency: "INR",
-              maximumFractionDigits: 0,
-            }),
-            color: cardStyles.averageIncome,
-          });
-        }
+
         // Events
         if (eventsRes.data?.length)
           setEventsData(
             eventsRes.data.map((i) => ({
               title: i.title,
-              time: (i.time || "").substring(0, 5), // <--- FIX
+              time: (i.time || "").substring(0, 5),
               description: i.description,
             }))
           );
 
-        // --- AFTER ---
-        // --- ADDED: Process Exams Data ---
+        // Exams
         if (examsRes.data?.length) {
           setExamsData(
             examsRes.data.map((i: ApiUpcomingExam) => ({
-              // Map API fields to the ExamData interface fields
               subject_name: i.subject_name,
               class_name: i.class_name,
-              // Format the date for display, but assign to the correct key
-              exam_date: new Date(i.exam_date).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              }),
-              // Map start_time to exam_time
-              exam_time: i.start_time || "",
-              // Map total_marks and convert to string to match ExamData interface
-              total_marks: i.total_marks.toString(),
+              exam_date: i.exam_date
+                ? new Date(i.exam_date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "",
+              exam_time: (i.start_time || "").substring(0, 5),
+              total_marks: String(i.total_marks ?? ""),
+            }))
+          );
+        }
+
+        // Professor attendance (attendance-report)
+        if (profAttendanceRes?.data?.length) {
+          setProfAttendanceData(
+            profAttendanceRes.data.map((i) => ({
+              name: i.day, // show full day from your screenshot; slice to 3 chars if you prefer
+              present: parseInt(i.present ?? "0", 10),
+              absent: parseInt(i.absent ?? "0", 10),
             }))
           );
         }
@@ -617,12 +594,12 @@ const SchoolDashboardPage: FC = () => {
         setLoading(false);
       }
     };
+
     fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Loading and Error UI ---
-  // --- MODIFIED: Use Loader2 icon for loading state ---
   if (loading)
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -639,11 +616,7 @@ const SchoolDashboardPage: FC = () => {
   // --- Render Dashboard ---
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* <Sidebar /> */}
       <div className="flex-1 flex flex-col">
-        {/* <Header /> */}
-        {/* --- Header with Buttons --- */}
-
         <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-6">
@@ -656,13 +629,14 @@ const SchoolDashboardPage: FC = () => {
               <FacultyPerformanceChart facultyPerfData={facultyPerfData} />
               <ClassPerformanceChart classPerfData={classPerfData} />
             </div>
-            <FinancialPerformanceChart financeData={financeData} />
           </div>
+
           {/* Right Sidebar Column */}
           <div className="lg:col-span-1 space-y-6">
+            {/* Professor attendance chart placed here as requested */}
+            <ProfessorAttendanceChart data={profAttendanceData} />
             <CalendarCard />
             <EventsCard eventsData={eventsData} />
-            {/* --- ADDED: Upcoming Exams Card --- */}
             <UpcomingExamsCard examsData={examsData} />
           </div>
         </main>

@@ -1,28 +1,21 @@
 "use client"; // Required because DashboardCard uses a Link and is interactive
 
 // --- Modified imports: Added useRouter ---
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import React from "react";
 import {
-  School,
-  Users,
-  UserCog,
   ClipboardList,
   Megaphone,
-  Warehouse,
   CalendarDays,
-  IndianRupee,
   UserCheck,
-  FileQuestion,
-  Bot,
-  LayoutDashboard,
-  GraduationCap,
-  BrainCircuit,
-  Umbrella,
   UmbrellaIcon,
   Plus,
+  UserCog,
+  IndianRupee,
+  Users,
+  LayoutDashboard,
 } from "lucide-react";
 
 // --- DashboardCard Component Definition (No Change) ---
@@ -47,52 +40,14 @@ function DashboardCard({ title, icon: Icon, href }: DashboardCardProps) {
 // --- End of DashboardCard Definition ---
 
 // --- Defined item lists based on role (No Change) ---
-const parentItems = [
-  {
-    title: "Student Dashboard",
-    icon: GraduationCap,
-    href: "/student-dashboard",
-  },
-  { title: "School Information", icon: School, href: "/school-info" },
-  { title: "Exam's", icon: ClipboardList, href: "/view-exam-report" },
-  {
-    title: "Attendance",
-    icon: UserCheck,
-    href: "/view-attendance-report",
-  },
-  {
-    title: "Timetable",
-    icon: CalendarDays,
-    href: "/view-timetable",
-  },
-  {
-    title: "Ai Chat Bot",
-    icon: Bot,
-    href: "/ai-chatbot",
-  },
-  { title: "Events", icon: Megaphone, href: "/view_event" },
-  {
-    title: "Inventory",
-    icon: Warehouse,
-    href: "/view-inventory",
-  },
-  {
-    title: "AI-Lerning",
-    icon: BrainCircuit,
-    href: "/ai-lerning",
-  },
-  { title: "View Holiday", icon: Umbrella, href: "/view-holidayes" },
-];
-
 const teacherItems = [
   {
-    title: "Admin Dashboard",
+    title: " Dashboard",
     icon: LayoutDashboard,
     href: "/admin-dashboard",
   },
 
   { title: "Add Student useing Excel", icon: Users, href: "/add-student" },
-  { title: "Student admission", icon: Users, href: "/student-management" },
   { title: "Fee's", icon: IndianRupee, href: "/fee-management" },
   { title: "Exam's", icon: ClipboardList, href: "/exam-management" },
   {
@@ -112,58 +67,23 @@ const teacherItems = [
   },
   { title: "Staff Management", icon: UserCog, href: "/staff-management" },
   { title: "Add Department", icon: Plus, href: "/add-school" },
-  {
-    title: "Exam paper Gunration",
-    icon: FileQuestion,
-    href: "/exam-paper-generator",
-  },
+
   { title: "Events", icon: Megaphone, href: "/event-management" },
   {
     title: "Holidayes",
     icon: UmbrellaIcon,
     href: "/holiday-management",
   },
-  {
-    title: "Inventory",
-    icon: Warehouse,
-    href: "/inventory-management",
-  },
-];
-
-const adminItems = [
-  {
-    title: "Admin Dashboard",
-    icon: LayoutDashboard,
-    href: "/admin-dashboard",
-  },
 ];
 
 export default function HomePage() {
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(true);
 
-  useEffect(() => {
-    const role = localStorage.getItem("user_role");
-    if (!role) {
-      window.location.replace("/");
-    } else {
-      setIsLoading(false);
-      setUserRole(role);
-    }
-  }, []); // Added router as a dependency
+  // Added router as a dependency
 
   // --- Determine which items to display ---
-  const itemsToDisplay =
-    userRole === "parent"
-      ? parentItems
-      : userRole === "teacher"
-      ? teacherItems
-      : userRole == "admin"
-      ? adminItems
-      : []; // Default to empty array if no role matches
+  const itemsToDisplay = teacherItems;
 
-  // --- Conditional Rendering based on loading and role ---
-  // --- This now also acts as a loading screen during the auth check ---
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
