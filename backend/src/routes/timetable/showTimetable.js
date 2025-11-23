@@ -25,6 +25,7 @@ router.get("/class/:classId", async (req, res) => {
                 p.start_time,
                 p.end_time,
                 s.subject_name,
+                t.id,
                 f.f_name,
                 f.l_name
             FROM timetable t
@@ -102,6 +103,7 @@ router.get("/faculty/:facultyId", async (req, res) => {
                 p.start_time,
                 p.end_time,
                 s.subject_name,
+                t.id,
                 c.standard,
                 c.division
             FROM timetable t
