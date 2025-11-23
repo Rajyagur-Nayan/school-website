@@ -3,6 +3,12 @@ const pool = require('../../connections/DB.connect.js');
 
 const router = express.Router();
 
+// --- GET THE FULL TIMETABLE (with human-readable names) ---
+/**
+ * @route   GET /api/admin/timetable
+ * @desc    Get the entire school timetable, joined with readable names
+ * @access  Private (Admin Only)
+ */
 router.get('/', async (req, res) => {
     try {
         // A comprehensive JOIN query to make the data easy for the frontend to display.
@@ -47,7 +53,11 @@ router.get('/', async (req, res) => {
 
 
 // --- CREATE OR UPDATE A TIMETABLE ENTRY (UPSERT) ---
-
+/**
+ * @route   POST /api/admin/timetable
+ * @desc    Create a new timetable entry or update if it exists (Upsert)
+ * @access  Private (Admin Only)
+ */
 router.post('/', async (req, res) => {
     const { period_id, class_id, subject_id, faculty_id } = req.body;
 
@@ -57,8 +67,6 @@ router.post('/', async (req, res) => {
 
     try {
         // This is the "UPSERT" query.
-        // It tries to INSERT. If it fails due to the unique constraint on (period_id, class_id),
-        // it then performs an UPDATE on the conflicting row instead.
         const query = `
             INSERT INTO timetable (period_id, class_id, subject_id, faculty_id)
             VALUES ($1, $2, $3, $4)
@@ -87,24 +95,95 @@ router.post('/', async (req, res) => {
 });
 
 
+// --- UPDATE A TIMETABLE ENTRY (PATCH) ---
+/**
+ * @route   PATCH /api/admin/timetable/:id
+ * @desc    Update a specific timetable entry by ID
+ * @access  Private (Admin Only)
+ */
+router.patch('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { period_id, class_id, subject_id, faculty_id } = req.body;
+
+    const updates = { period_id, class_id, subject_id, faculty_id };
+    const fields = Object.keys(updates).filter(key => updates[key] !== undefined);
+
+    if (fields.length === 0) {
+        return res.status(400).json({ error: 'No fields provided for update.' });
+    }
+
+    const setClause = fields.map((key, index) => `${key} = $${index + 1}`).join(', ');
+    const values = fields.map(key => updates[key]);
+    values.push(id); // Add ID as the last parameter
+
+    try {
+        const result = await pool.query(
+            `UPDATE timetable SET ${setClause} WHERE id = $${values.length} RETURNING *`,
+            values
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Timetable entry not found.' });
+        }
+
+        res.status(200).json({
+            message: 'Timetable entry updated successfully.',
+            entry: result.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Update Timetable Error:', err);
+        // Handle unique constraint violation (e.g., trying to move a class to an occupied slot)
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'A timetable entry already exists for this Period and Class.' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+// --- DELETE A TIMETABLE ENTRY (DELETE) ---
+/**
+ * @route   DELETE /api/admin/timetable/:id
+ * @desc    Delete a specific timetable entry by ID
+ * @access  Private (Admin Only)
+ */
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query('DELETE FROM timetable WHERE id = $1 RETURNING *', [id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Timetable entry not found.' });
+        }
+
+        res.status(200).json({ message: 'Timetable entry deleted successfully.' });
+
+    } catch (err) {
+        console.error('Delete Timetable Error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 // --- GET DATA FOR DROPDOWNS (for the frontend form) ---
+/**
+ * @route   GET /api/admin/timetable/form-data
+ * @desc    Get all periods, classes, subjects, and faculty for UI dropdowns
+ * @access  Private (Admin Only)
+ */
 router.get('/form-data', async (req, res) => {
     let client;
     try {
         client = await pool.connect();
 
-        const periods = await client.query(
-            'SELECT id, day, period_number FROM periods ORDER BY day, period_number'
-        );
-        const classes = await client.query(
-            'SELECT id, standard, division FROM classes ORDER BY standard, division'
-        );
-        const subjects = await client.query(
-            'SELECT id, subject_name FROM subjects ORDER BY subject_name'
-        );
-        const faculty = await client.query(
-            'SELECT id, F_name, L_name FROM faculty ORDER BY F_name, L_name'
-        );
+        const [periods, classes, subjects, faculty] = await Promise.all([
+            client.query('SELECT id, day, period_number FROM periods ORDER BY day, period_number'),
+            client.query('SELECT id, standard, division FROM classes ORDER BY standard, division'),
+            client.query('SELECT id, subject_name FROM subjects ORDER BY subject_name'),
+            client.query('SELECT id, F_name, L_name FROM faculty ORDER BY F_name, L_name')
+        ]);
 
         res.status(200).json({
             periods: periods.rows,
@@ -120,7 +199,4 @@ router.get('/form-data', async (req, res) => {
     }
 });
 
-
 module.exports = router;
-
-// const samester = ["U.K.G.", "C.K.G.", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th-sci", "11th-com", "11th-art", "12th-sci", "12th-com", "12th-art"]
