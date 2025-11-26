@@ -106,6 +106,20 @@ router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
+    // ✅ Step 1: Count total rows
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM "College"`
+    );
+    const totalRows = parseInt(countResult.rows[0].count, 10);
+
+    // ✅ Step 2: Prevent deleting the last record
+    if (totalRows <= 1) {
+      return res.status(400).json({
+        error: "At least one college entry must exist. Cannot delete the last record.",
+      });
+    }
+
+    // ✅ Step 3: Delete record by id
     const { rowCount } = await pool.query(
       `DELETE FROM "College" WHERE id = $1`,
       [id]
@@ -115,7 +129,9 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "College not found." });
     }
 
-    return res.status(200).json({ message: "College deleted successfully." });
+    return res
+      .status(200)
+      .json({ message: "College deleted successfully." });
   } catch (error) {
     console.error("❌ Failed to delete college:", error);
     return res.status(500).json({ error: "Internal Server Error" });

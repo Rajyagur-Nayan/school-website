@@ -147,31 +147,22 @@ router.get("/faculty-performance", async (req, res) => {
   let client;
   try {
     client = await pool.connect();
+
+    // Since you added faculty_id to exam_schedule, we don't need the complex WITH clause (CTE) anymore.
+    // We can join exam_marks directly to exam_schedule, and then to faculty.
     const { rows } = await client.query(`
-            WITH faculty_subjects AS (
-                -- Step 1: Find out which subjects each faculty teaches in which classes
-                SELECT DISTINCT faculty_id, class_id, subject_id
-                FROM timetable
-            ),
-            faculty_performance AS (
-                -- Step 2: Calculate the average marks for exams taught by each faculty member
-                SELECT
-                    fs.faculty_id,
-                    ROUND(AVG(em.marks_obtained * 100 / es.total_marks), 2) AS average_score
-                FROM exam_marks em
-                JOIN exam_schedule es ON em.exam_schedule_id = es.id
-                JOIN faculty_subjects fs ON es.class_id = fs.class_id AND es.subject_id = fs.subject_id
-                WHERE em.marks_obtained >= 0
-                GROUP BY fs.faculty_id
-            )
-            -- Step 3: Join with the faculty table to get names
-            SELECT 
-                f.f_name || ' ' || f.l_name AS faculty_name,
-                fp.average_score
-            FROM faculty_performance fp
-            JOIN faculty f ON fp.faculty_id = f.id
-            ORDER BY fp.average_score DESC;
-        `);
+        SELECT 
+            f.f_name || ' ' || f.l_name AS faculty_name,
+            -- Calculate percentage: (marks obtained / total marks) * 100
+            ROUND(AVG(em.marks_obtained * 100.0 / es.total_marks), 2) AS average_score
+        FROM exam_marks em
+        JOIN exam_schedule es ON em.exam_schedule_id = es.id
+        JOIN faculty f ON es.faculty_id = f.id
+        WHERE em.marks_obtained >= 0 
+        GROUP BY f.id, f.f_name, f.l_name
+        ORDER BY average_score DESC;
+    `);
+
     res.status(200).json(rows);
   } catch (err) {
     console.error("Get Faculty Performance Error:", err);
