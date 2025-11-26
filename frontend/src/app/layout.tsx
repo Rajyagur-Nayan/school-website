@@ -5,7 +5,6 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./pages/auth/AuthContext";
 import { AppShell } from "./pages/Sidebar";
-import { Navbar } from "./pages/Navbar";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -26,7 +25,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Toaster />
-          <Navbar />
           <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>

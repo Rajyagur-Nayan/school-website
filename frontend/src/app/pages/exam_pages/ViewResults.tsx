@@ -1,7 +1,7 @@
 // components/exam/ViewResults.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 // --- Data Types ---
 interface Class {
@@ -41,6 +42,7 @@ interface Class {
 interface Student {
   id: number;
   student_name: string;
+  admission_number?: string; // if available from API
 }
 interface StudentResult {
   student_name: string;
@@ -56,6 +58,8 @@ interface GroupedStudentData {
   [key: string]: Student[];
 }
 
+// Optional: path to uploaded image from convo (available in environment)
+
 export function ViewResults() {
   // State for dropdown data
   const [classes, setClasses] = useState<Class[]>([]);
@@ -64,6 +68,9 @@ export function ViewResults() {
   // State for selections
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+
+  // Search state for students
+  const [studentSearchTerm, setStudentSearchTerm] = useState<string>("");
 
   // State for results and loading/error
   const [studentResults, setStudentResults] = useState<StudentResult[]>([]);
@@ -98,6 +105,7 @@ export function ViewResults() {
     setStudents([]);
     setSelectedStudentId("");
     setStudentResults([]);
+    setStudentSearchTerm("");
     setError(null);
 
     if (selectedClassId) {
@@ -109,12 +117,18 @@ export function ViewResults() {
             { withCredentials: true }
           );
 
-          // ✅ FIX APPLIED HERE: Flatten the grouped student data
+          // Flatten grouped student data if the API returns grouped structure
           const groupedData: GroupedStudentData = response.data || {};
-          const studentArrays = Object.values(groupedData); // Get an array of student arrays
-          const flatStudentList = studentArrays.flat(); // Merge them into a single array
+          const studentArrays = Object.values(groupedData);
+          const flatStudentList = studentArrays.flat();
 
-          setStudents(flatStudentList); // Set the flattened array to state
+          // If response is already a flat array, fallback to that
+          const resultList =
+            Array.isArray(response.data) && response.data.length > 0
+              ? response.data
+              : flatStudentList;
+
+          setStudents(resultList || []);
         } catch (err) {
           console.error("Failed to fetch students:", err);
           toast.error("Could not load student list for this class.");
@@ -140,8 +154,6 @@ export function ViewResults() {
             `${process.env.NEXT_PUBLIC_API_URL}/mark_entry/student/${selectedStudentId}`,
             { withCredentials: true }
           );
-          console.log(response.data);
-
           setStudentResults(response.data || []);
         } catch (err: any) {
           if (err.response?.status === 404) {
@@ -181,6 +193,19 @@ export function ViewResults() {
   );
   const selectedClass = classes.find((c) => String(c.id) === selectedClassId);
 
+  // --- Search filtering for students (memoized)
+  const filteredStudents = useMemo(() => {
+    const q = studentSearchTerm.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter((s) => {
+      const name = s.student_name?.toLowerCase() || "";
+      const adm = (s as any).admission_number
+        ? String((s as any).admission_number).toLowerCase()
+        : "";
+      return name.includes(q) || adm.includes(q) || String(s.id) === q;
+    });
+  }, [students, studentSearchTerm]);
+
   return (
     <Card>
       <CardHeader>
@@ -195,7 +220,9 @@ export function ViewResults() {
           <div>
             <Label>Select Class</Label>
             <Select
-              onValueChange={setSelectedClassId}
+              onValueChange={(v) => {
+                setSelectedClassId(v);
+              }}
               value={selectedClassId}
               disabled={isLoadingClasses}
             >
@@ -215,6 +242,8 @@ export function ViewResults() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* --- Student search + list --- */}
           <div>
             <Label>Select Student</Label>
             <Select
@@ -237,12 +266,34 @@ export function ViewResults() {
                   }
                 />
               </SelectTrigger>
-              <SelectContent>
-                {students.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>
-                    {s.student_name}
-                  </SelectItem>
-                ))}
+
+              {/* ---------------------- SEARCHABLE DROPDOWN ---------------------- */}
+              <SelectContent className="max-h-64">
+                {/* Search bar inside dropdown */}
+                <div className="p-2 sticky top-0 bg-background z-10 border-b">
+                  <div className="relative">
+                    <Input
+                      placeholder="Search student..."
+                      value={studentSearchTerm}
+                      onChange={(e) => setStudentSearchTerm(e.target.value)}
+                      className="pr-8"
+                    />
+                    <Search className="h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                </div>
+
+                {/* Filtered student list */}
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.student_name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="p-3 text-sm text-muted-foreground text-center">
+                    No matching students
+                  </div>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -295,6 +346,7 @@ export function ViewResults() {
                 {parseFloat(percentage) >= 40 ? "PASS" : "FAIL"}
               </Badge>
             </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
@@ -316,6 +368,7 @@ export function ViewResults() {
                   </TableRow>
                 ))}
               </TableBody>
+
               <TableFooter>
                 <TableRow className="bg-muted/50">
                   <TableCell className="font-bold">Total</TableCell>

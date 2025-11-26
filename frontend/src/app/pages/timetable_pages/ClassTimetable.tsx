@@ -1,3 +1,4 @@
+// components/ClassTimetable.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -27,40 +28,25 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
-
-// --- Data Types ---
-interface Class {
-  id: number;
-  standard: string;
-  division: string;
-}
-interface Faculty {
-  id: number;
-  f_name: string;
-  l_name: string;
-}
-interface TimetableEntry {
-  day: string;
-  period_number: number;
-  subject_name: string;
-  f_name: string;
-  l_name: string;
-}
-interface FacultyScheduleEntry {
-  day: string;
-  period_number: number;
-  subject_name: string;
-  standard: string;
-  division: string;
-}
-interface TimetableCellData {
-  content: React.ReactNode;
-  color?: string;
-}
-interface FormattedTimetable {
-  [day: string]: { [period: number]: TimetableCellData };
-}
+import { Loader2, Edit, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const WEEK_DAYS = [
   "Monday",
@@ -71,7 +57,7 @@ const WEEK_DAYS = [
   "Saturday",
 ];
 
-// --- NEW: Define a Palette of Colors ---
+// color palette for timetable blocks
 const colorPalette = [
   "bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200",
   "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
@@ -84,17 +70,74 @@ const colorPalette = [
   "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200",
   "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
 ];
-// --- END NEW ---
 
-// --- Reusable Components (TimetableDisplay remains the same) ---
+// Types
+interface Class {
+  id: number;
+  standard: string;
+  division: string;
+}
+interface Faculty {
+  id: number;
+  f_name: string;
+  l_name?: string;
+}
+interface Subject {
+  id: number;
+  subject_name: string;
+}
+interface TimetableEntry {
+  day: string;
+  period_number: number;
+  subject_name: string;
+  f_name: string;
+  l_name: string;
+  id?: number; // may be present when fetched from add_slot endpoints
+  period_id?: number; // id for the slot record
+  subject_id?: number;
+  faculty_id?: number;
+  class_id?: number;
+}
+interface FacultyScheduleEntry {
+  day: string;
+  period_number: number;
+  subject_name: string;
+  standard: string;
+  division: string;
+  id?: number;
+}
+
+// cell data for UI
+interface TimetableCellData {
+  content: React.ReactNode;
+  color?: string;
+  meta?: any; // keep original entry for edit/delete
+}
+interface FormattedTimetable {
+  [day: string]: { [period: number]: TimetableCellData };
+}
+
+// small spinner component
+const LoadingSpinner = ({ text }: { text: string }) => (
+  <div className="flex flex-col items-center justify-center text-muted-foreground py-10 space-y-2">
+    <Loader2 className="h-8 w-8 animate-spin" />
+    <p>{text}</p>
+  </div>
+);
+
+// Timetable renderer (keeps same look) - now accepts onEdit/onDelete
 const TimetableDisplay = ({
   timetable,
   periods,
+  onEdit,
+  onDelete,
 }: {
   timetable: FormattedTimetable;
   periods: number[];
+  onEdit?: (meta: any) => void;
+  onDelete?: (meta: any) => void;
 }) => {
-  if (periods.length === 0) return null;
+  if (!periods || periods.length === 0) return null;
 
   return (
     <div className="border rounded-md overflow-x-auto">
@@ -115,6 +158,7 @@ const TimetableDisplay = ({
             ))}
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {periods.map((period) => (
             <TableRow
@@ -128,20 +172,42 @@ const TimetableDisplay = ({
               >
                 {`P${period}`}
               </TableCell>
+
               {WEEK_DAYS.map((day) => {
                 const cellData = timetable[day]?.[period];
-                // Use assigned color or transparent for free periods
                 const cellColor = cellData?.color || "bg-transparent";
 
                 return (
                   <TableCell
                     key={day}
-                    // Apply color and padding
                     className={`h-20 align-top border-x last:border-r-0 first:border-l-0 dark:border-gray-700 p-0 ${cellColor}`}
                   >
                     {cellData ? (
-                      <div className="p-2 h-full flex flex-col justify-center">
+                      <div className="p-2 h-full flex flex-col justify-center relative">
+                        {/* Main content */}
                         {cellData.content}
+
+                        {/* Edit/Delete buttons top-right */}
+                        <div className="absolute top-1 right-1 flex gap-1">
+                          {onEdit && (
+                            <button
+                              className="p-1 rounded-md bg-white/80 dark:bg-black/60 hover:scale-105 transition-transform shadow-sm"
+                              onClick={() => onEdit(cellData.meta)}
+                              aria-label="Edit slot"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              className="p-1 rounded-md bg-white/80 dark:bg-black/60 hover:scale-105 transition-transform shadow-sm"
+                              onClick={() => onDelete(cellData.meta)}
+                              aria-label="Delete slot"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-600 text-xs italic p-1">
@@ -159,27 +225,23 @@ const TimetableDisplay = ({
   );
 };
 
-const LoadingSpinner = ({ text }: { text: string }) => (
-  <div className="flex flex-col items-center justify-center text-muted-foreground py-10 space-y-2">
-    <Loader2 className="h-8 w-8 animate-spin" />
-    <p>{text}</p>
-  </div>
-);
-
 export function ClassTimetable() {
-  // Common state
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
+  // common
   const [classes, setClasses] = useState<Class[]>([]);
   const [faculty, setFaculty] = useState<Faculty[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // State for Class-wise tab
+  // class-wise state
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [classTimetable, setClassTimetable] = useState<FormattedTimetable>({});
   const [classPeriods, setClassPeriods] = useState<number[]>([]);
   const [isClassLoading, setIsClassLoading] = useState(false);
   const [classError, setClassError] = useState<string | null>(null);
 
-  // State for Teacher-wise tab
+  // teacher-wise state
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null
   );
@@ -190,161 +252,334 @@ export function ClassTimetable() {
   const [isFacultyLoading, setIsFacultyLoading] = useState(false);
   const [facultyError, setFacultyError] = useState<string | null>(null);
 
-  // 1. Fetch initial form data
+  // Edit dialog state
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<{
+    id: number;
+    period_id: number;
+    class_id: number;
+    subject_id?: number;
+    faculty_id?: number;
+    day?: string;
+    period_number?: number;
+  } | null>(null);
+
+  // Delete dialog state
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
+
+  // --- Helper: fetch initial form data (classes, faculty, subjects) ---
   useEffect(() => {
     const fetchFormData = async () => {
       setIsInitialLoading(true);
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/add_slot/form-data`,
-          { withCredentials: true }
-        );
-        setClasses(response.data.classes || []);
-        setFaculty(response.data.faculty || []);
+        const res = await axios.get(`${API_URL}/add_slot/form-data`, {
+          withCredentials: true,
+        });
+        setClasses(res.data.classes || []);
+        setFaculty(res.data.faculty || []);
+        setSubjects(res.data.subjects || []);
       } catch (err) {
-        console.log(err);
-        toast.error("Failed to fetch initial form data.");
+        console.error("Failed to fetch form-data:", err);
+        toast.error("Failed to fetch initial data.");
       } finally {
         setIsInitialLoading(false);
       }
     };
     fetchFormData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [API_URL]);
 
-  // 2. Fetch timetable for the selected CLASS
-  useEffect(() => {
-    if (!selectedClassId) {
+  // --- fetch functions (extracted so we can call them after update/delete) ---
+  const fetchClassTimetable = async (classId: string | null) => {
+    if (!classId) {
       setClassTimetable({});
       setClassPeriods([]);
       return;
     }
-    const fetchTimetable = async () => {
-      setIsClassLoading(true);
-      setClassError(null);
-      try {
-        const response = await axios.get<TimetableEntry[]>(
-          `${process.env.NEXT_PUBLIC_API_URL}/timetable/class/${selectedClassId}`,
-          { withCredentials: true }
-        );
-        const uniquePeriods: number[] = [
-          ...new Set(response.data.map((entry) => entry.period_number)),
-        ].sort((a, b) => a - b);
-        const formattedData: FormattedTimetable = {};
+    setIsClassLoading(true);
+    setClassError(null);
 
-        // --- NEW: Dynamic Color Assignment Logic ---
-        const assignedColors: { [subject: string]: string } = {};
-        let colorIndex = 0;
-        // --- END NEW ---
+    try {
+      const res = await axios.get<TimetableEntry[]>(
+        `${API_URL}/timetable/class/${classId}`,
+        { withCredentials: true }
+      );
 
-        response.data.forEach((entry) => {
-          if (!formattedData[entry.day]) {
-            formattedData[entry.day] = {};
-          }
+      const uniquePeriods: number[] = [
+        ...new Set(res.data.map((e) => e.period_number)),
+      ].sort((a, b) => a - b);
 
-          // --- NEW: Assign color if subject is new ---
-          if (!assignedColors[entry.subject_name]) {
-            assignedColors[entry.subject_name] =
-              colorPalette[colorIndex % colorPalette.length];
-            colorIndex++;
-          }
-          const color = assignedColors[entry.subject_name];
-          // --- END NEW ---
+      const formatted: FormattedTimetable = {};
+      const assignedColors: Record<string, string> = {};
+      let colorIndex = 0;
 
-          formattedData[entry.day][entry.period_number] = {
-            content: (
-              <div className="text-center">
-                <p className="font-medium text-xs sm:text-sm truncate">
-                  {entry.subject_name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">{`${entry.f_name} ${entry.l_name}`}</p>
-              </div>
-            ),
-            color: color, // Store the assigned color
-          };
-        });
-        setClassPeriods(uniquePeriods);
-        setClassTimetable(formattedData);
-      } catch (err: any) {
-        setClassTimetable({});
-        setClassPeriods([]);
-        const errorMsg =
-          err.response?.data?.error || "Failed to fetch timetable.";
-        setClassError(errorMsg);
-        toast.error(errorMsg);
-      } finally {
-        setIsClassLoading(false);
-      }
-    };
-    fetchTimetable();
-  }, [selectedClassId]);
+      res.data.forEach((entry) => {
+        if (!formatted[entry.day]) formatted[entry.day] = {};
+        if (!assignedColors[entry.subject_name]) {
+          assignedColors[entry.subject_name] =
+            colorPalette[colorIndex % colorPalette.length];
+          colorIndex++;
+        }
+        formatted[entry.day][entry.period_number] = {
+          content: (
+            <div className="text-center">
+              <p className="font-medium text-xs sm:text-sm truncate">
+                {entry.subject_name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {entry.f_name} {entry.l_name}
+              </p>
+            </div>
+          ),
+          color: assignedColors[entry.subject_name],
+          meta: entry, // <-- attach entry so edit/delete buttons work
+        };
+      });
 
-  // 3. Fetch timetable for the selected FACULTY
-  useEffect(() => {
-    if (!selectedFacultyId) {
+      setClassTimetable(formatted);
+      setClassPeriods(uniquePeriods);
+    } catch (err: any) {
+      console.error("Failed to fetch class timetable:", err);
+      setClassTimetable({});
+      setClassPeriods([]);
+      const msg = err?.response?.data?.error || "Failed to fetch timetable.";
+      setClassError(msg);
+      toast.error(msg);
+    } finally {
+      setIsClassLoading(false);
+    }
+  };
+
+  const fetchFacultyTimetable = async (facultyId: string | null) => {
+    if (!facultyId) {
       setFacultyTimetable({});
       setFacultyPeriods([]);
       return;
     }
-    const fetchTimetable = async () => {
-      setIsFacultyLoading(true);
-      setFacultyError(null);
-      try {
-        const response = await axios.get<FacultyScheduleEntry[]>(
-          `${process.env.NEXT_PUBLIC_API_URL}/timetable/faculty/${selectedFacultyId}`,
-          { withCredentials: true }
-        );
-        const uniquePeriods: number[] = [
-          ...new Set(response.data.map((entry) => entry.period_number)),
-        ].sort((a, b) => a - b);
-        const formattedData: FormattedTimetable = {};
+    setIsFacultyLoading(true);
+    setFacultyError(null);
 
-        // --- NEW: Dynamic Color Assignment Logic ---
-        const assignedColors: { [subject: string]: string } = {};
-        let colorIndex = 0;
-        // --- END NEW ---
+    try {
+      const res = await axios.get<FacultyScheduleEntry[]>(
+        `${API_URL}/timetable/faculty/${facultyId}`,
+        { withCredentials: true }
+      );
 
-        response.data.forEach((entry) => {
-          if (!formattedData[entry.day]) {
-            formattedData[entry.day] = {};
-          }
+      const uniquePeriods: number[] = [
+        ...new Set(res.data.map((e) => e.period_number)),
+      ].sort((a, b) => a - b);
 
-          // --- NEW: Assign color if subject is new ---
-          if (!assignedColors[entry.subject_name]) {
-            assignedColors[entry.subject_name] =
-              colorPalette[colorIndex % colorPalette.length];
-            colorIndex++;
-          }
-          const color = assignedColors[entry.subject_name];
-          // --- END NEW ---
+      const formatted: FormattedTimetable = {};
+      const assignedColors: Record<string, string> = {};
+      let colorIndex = 0;
 
-          formattedData[entry.day][entry.period_number] = {
-            content: (
-              <div className="text-center">
-                <p className="font-medium text-xs sm:text-sm truncate">
-                  {entry.subject_name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">{`${entry.standard} - ${entry.division}`}</p>
-              </div>
-            ),
-            color: color, // Store the assigned color
-          };
-        });
-        setFacultyPeriods(uniquePeriods);
-        setFacultyTimetable(formattedData);
-      } catch (err: any) {
-        setFacultyTimetable({});
-        setFacultyPeriods([]);
-        const errorMsg =
-          err.response?.data?.error || "Failed to fetch schedule.";
-        setFacultyError(errorMsg);
-        toast.error(errorMsg);
-      } finally {
-        setIsFacultyLoading(false);
-      }
-    };
-    fetchTimetable();
+      res.data.forEach((entry) => {
+        if (!formatted[entry.day]) formatted[entry.day] = {};
+        if (!assignedColors[entry.subject_name]) {
+          assignedColors[entry.subject_name] =
+            colorPalette[colorIndex % colorPalette.length];
+          colorIndex++;
+        }
+        formatted[entry.day][entry.period_number] = {
+          content: (
+            <div className="text-center">
+              <p className="font-medium text-xs sm:text-sm truncate">
+                {entry.subject_name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {entry.standard} - {entry.division}
+              </p>
+            </div>
+          ),
+          color: assignedColors[entry.subject_name],
+          meta: entry, // attach entry (may be lighter than class entry)
+        };
+      });
+
+      setFacultyTimetable(formatted);
+      setFacultyPeriods(uniquePeriods);
+    } catch (err: any) {
+      console.error("Failed to fetch faculty timetable:", err);
+      setFacultyTimetable({});
+      setFacultyPeriods([]);
+      const msg = err?.response?.data?.error || "Failed to fetch schedule.";
+      setFacultyError(msg);
+      toast.error(msg);
+    } finally {
+      setIsFacultyLoading(false);
+    }
+  };
+
+  // useEffects to call the fetchers when selection changes
+  useEffect(() => {
+    fetchClassTimetable(selectedClassId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClassId]);
+
+  useEffect(() => {
+    fetchFacultyTimetable(selectedFacultyId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFacultyId]);
 
+  // Helper: check for duplicate (period_id,class_id) already in DB for the class
+  const checkDuplicatePeriod = async (
+    class_id: number,
+    period_id: number,
+    ignoreId?: number | null
+  ) => {
+    try {
+      // Use the class timetable already in state to check for duplicates client-side (fast)
+      // Look through classTimetable to find any entry with same period_number and that has meta.class_id === class_id
+      for (const day of Object.keys(classTimetable)) {
+        const periods = classTimetable[day];
+        for (const p of Object.keys(periods)) {
+          const cell = periods[Number(p)];
+          const meta = cell?.meta;
+          if (!meta) continue;
+          const metaId = meta.id ?? meta.period_id ?? null;
+          const metaPeriodNumber = meta.period_number ?? meta.period_id ?? null;
+          const metaClassId = meta.class_id ?? meta.class ?? class_id;
+          // if it matches target pair and not the same row (ignoreId), it's a duplicate
+          if (
+            Number(metaPeriodNumber) === Number(period_id) &&
+            Number(metaClassId) === Number(class_id) &&
+            (ignoreId == null || Number(metaId) !== Number(ignoreId))
+          ) {
+            return true;
+          }
+        }
+      }
+      // If not found in client state, fall back to server validation endpoint (optional)
+      // NOTE: If you have a dedicated endpoint to check, call it here. Otherwise rely on server-side constraint.
+      return false;
+    } catch (err) {
+      // If anything fails, be conservative and return false (let server catch it)
+      return false;
+    }
+  };
+
+  // ------- PATCH (update) handler for a timetable entry -------
+  const handleUpdateSlot = async (payload: {
+    id: number;
+    period_id: number;
+    subject_id: number | null;
+    faculty_id: number | null;
+  }) => {
+    try {
+      // Client-side duplicate check: prevent obvious conflicts
+      const isDup = await checkDuplicatePeriod(payload.period_id, payload.id);
+      if (isDup) {
+        toast.error(
+          `Period ${payload.period_id} is already assigned for this class. Choose a different period.`
+        );
+        return null;
+      }
+
+      // Build form urlencoded params
+      const params = new URLSearchParams();
+      params.append("period_id", String(payload.period_id));
+      if (payload.subject_id !== null && payload.subject_id !== undefined)
+        params.append("subject_id", String(payload.subject_id));
+      if (payload.faculty_id !== null && payload.faculty_id !== undefined)
+        params.append("faculty_id", String(payload.faculty_id));
+
+      const res = await axios.patch(
+        `${API_URL}/add_slot/${payload.id}`,
+        params,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        }
+      );
+
+      toast.success("Timetable entry updated successfully.");
+      // Refresh whichever timetable is visible
+      if (selectedClassId) await fetchClassTimetable(selectedClassId);
+      if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
+      // close edit dialog
+      setIsEditOpen(false);
+      setEditingEntry(null);
+      return res.data;
+    } catch (err: any) {
+      console.error("Update slot failed:", err);
+
+      // Many backends include error.code (e.g. '23505') inside response.data; check that
+      const backendMsg =
+        err?.response?.data?.error || err?.response?.data?.message;
+
+      if (
+        (err?.response?.data &&
+          String(err?.response?.data)?.includes("23505")) ||
+        err?.response?.status === 400 ||
+        (backendMsg && String(backendMsg).toLowerCase().includes("period"))
+      ) {
+        toast.error(
+          "A timetable slot for that period and class already exists. Please choose another period."
+        );
+      } else {
+        toast.error("Failed to update timetable entry.");
+      }
+      return null;
+    }
+  };
+
+  // ------- DELETE handler for a timetable entry -------
+  const handleDeleteSlot = async (id: number) => {
+    try {
+      await axios.delete(`${API_URL}/add_slot/${id}`, {
+        withCredentials: true,
+      });
+      toast.success("Timetable entry deleted successfully.");
+      // refresh visible timetable
+      if (selectedClassId) await fetchClassTimetable(selectedClassId);
+      if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
+      setIsDeleteOpen(false);
+      setDeletingEntryId(null);
+    } catch (err) {
+      console.error("Delete slot failed:", err);
+      toast.error("Failed to delete timetable entry.");
+    }
+  };
+
+  // ---------- New: handlers passed into TimetableDisplay ----------
+  const handleCellEdit = (meta: any) => {
+    // meta may be TimetableEntry from class timetable or faculty schedule entry.
+    // attempt to populate editingEntry fields safely:
+    const id = meta?.id ?? meta?.period_id ?? null;
+    if (!id) {
+      toast.error("Unable to determine entry id for editing.");
+      return;
+    }
+
+    const periodId = meta.period_id ?? meta.period_number ?? 0;
+    const classId =
+      meta.class_id ?? (selectedClassId ? Number(selectedClassId) : 0);
+
+    setEditingEntry({
+      id: Number(id),
+      period_id: Number(periodId),
+      class_id: Number(classId),
+      subject_id: meta.subject_id ?? undefined,
+      faculty_id: meta.faculty_id ?? undefined,
+      day: meta.day,
+      period_number: meta.period_number,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleCellDelete = (meta: any) => {
+    const id = meta?.id ?? meta?.period_id ?? null;
+    if (!id) {
+      toast.error("Can't determine entry id to delete.");
+      return;
+    }
+    setDeletingEntryId(Number(id));
+    setIsDeleteOpen(true);
+  };
+  // ----------------------------------------------------------------
+
+  // --- UI: If initial loading
   if (isInitialLoading) {
     return (
       <Card>
@@ -366,9 +601,11 @@ export function ClassTimetable() {
       <CardHeader>
         <CardTitle>Timetable Viewer</CardTitle>
         <CardDescription>
-          View the weekly schedule for a specific class or teacher.
+          View the weekly schedule for a specific class or teacher. You can
+          update or delete timetable slots directly from the edit dialog.
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         <Tabs defaultValue="class-wise">
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -376,11 +613,14 @@ export function ClassTimetable() {
             <TabsTrigger value="teacher-wise">Teacher-wise</TabsTrigger>
           </TabsList>
 
+          {/* CLASS-WISE */}
           <TabsContent value="class-wise" className="mt-0 pt-4">
             <div className="mb-4">
               <Label htmlFor="class-select">Select Class</Label>
               <Select
-                onValueChange={setSelectedClassId}
+                onValueChange={(v) => {
+                  setSelectedClassId(v || null);
+                }}
                 disabled={classes.length === 0}
               >
                 <SelectTrigger
@@ -405,10 +645,12 @@ export function ClassTimetable() {
                 </SelectContent>
               </Select>
             </div>
+
             {isClassLoading && <LoadingSpinner text="Loading timetable..." />}
             {classError && (
               <p className="text-center text-red-500 py-10">{classError}</p>
             )}
+
             {!isClassLoading &&
               !classError &&
               selectedClassId &&
@@ -417,12 +659,18 @@ export function ClassTimetable() {
                   No schedule has been created for this class yet.
                 </p>
               )}
+
             {!isClassLoading && !classError && selectedClassId && (
-              <TimetableDisplay
-                timetable={classTimetable}
-                periods={classPeriods}
-              />
+              <>
+                <TimetableDisplay
+                  timetable={classTimetable}
+                  periods={classPeriods}
+                  onEdit={handleCellEdit}
+                  onDelete={handleCellDelete}
+                />
+              </>
             )}
+
             {!selectedClassId && !isClassLoading && !classError && (
               <p className="text-center text-muted-foreground py-10">
                 Please select a class to view its timetable.
@@ -430,11 +678,14 @@ export function ClassTimetable() {
             )}
           </TabsContent>
 
+          {/* TEACHER-WISE */}
           <TabsContent value="teacher-wise" className="mt-0 pt-4">
             <div className="mb-4">
               <Label htmlFor="teacher-select">Select Teacher</Label>
               <Select
-                onValueChange={setSelectedFacultyId}
+                onValueChange={(v) => {
+                  setSelectedFacultyId(v || null);
+                }}
                 disabled={faculty.length === 0}
               >
                 <SelectTrigger
@@ -446,10 +697,9 @@ export function ClassTimetable() {
                 <SelectContent>
                   {faculty.length > 0 ? (
                     faculty.map((f) => (
-                      <SelectItem
-                        key={f.id}
-                        value={String(f.id)}
-                      >{`${f.f_name} ${f.l_name}`}</SelectItem>
+                      <SelectItem key={f.id} value={String(f.id)}>
+                        {f.f_name} {f.l_name ?? ""}
+                      </SelectItem>
                     ))
                   ) : (
                     <div className="p-2 text-sm text-center text-muted-foreground">
@@ -459,10 +709,12 @@ export function ClassTimetable() {
                 </SelectContent>
               </Select>
             </div>
+
             {isFacultyLoading && <LoadingSpinner text="Loading schedule..." />}
             {facultyError && (
               <p className="text-center text-red-500 py-10">{facultyError}</p>
             )}
+
             {!isFacultyLoading &&
               !facultyError &&
               selectedFacultyId &&
@@ -471,12 +723,16 @@ export function ClassTimetable() {
                   No schedule has been created for this teacher yet.
                 </p>
               )}
+
             {!isFacultyLoading && !facultyError && selectedFacultyId && (
               <TimetableDisplay
                 timetable={facultyTimetable}
                 periods={facultyPeriods}
+                onEdit={handleCellEdit}
+                onDelete={handleCellDelete}
               />
             )}
+
             {!selectedFacultyId && !isFacultyLoading && !facultyError && (
               <p className="text-center text-muted-foreground py-10">
                 Please select a teacher to view their schedule.
@@ -485,6 +741,197 @@ export function ClassTimetable() {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {/* ----------------- Edit Dialog ----------------- */}
+      <Dialog
+        open={isEditOpen}
+        onOpenChange={(open) => !open && setIsEditOpen(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Timetable Slot</DialogTitle>
+          </DialogHeader>
+
+          {editingEntry ? (
+            <div className="space-y-4 py-2">
+              {/* Period (select) */}
+              <div>
+                <Label>Period (numeric)</Label>
+                <Input
+                  type="number"
+                  value={editingEntry.period_id}
+                  onChange={(e) =>
+                    setEditingEntry((prev) =>
+                      prev
+                        ? { ...prev, period_id: Number(e.target.value) }
+                        : prev
+                    )
+                  }
+                />
+              </div>
+
+              {/* Class select */}
+              <div>
+                <Label>Class</Label>
+                <Select
+                  value={String(editingEntry.class_id)}
+                  onValueChange={(v) =>
+                    setEditingEntry((prev) =>
+                      prev ? { ...prev, class_id: Number(v) } : prev
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.standard} - {c.division}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Subject select */}
+              <div>
+                <Label>Subject</Label>
+                <Select
+                  value={
+                    editingEntry.subject_id
+                      ? String(editingEntry.subject_id)
+                      : ""
+                  }
+                  onValueChange={(v) =>
+                    setEditingEntry((prev) =>
+                      prev ? { ...prev, subject_id: Number(v) } : prev
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.subject_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Faculty select */}
+              <div>
+                <Label>Faculty</Label>
+                <Select
+                  value={
+                    editingEntry.faculty_id
+                      ? String(editingEntry.faculty_id)
+                      : ""
+                  }
+                  onValueChange={(v) =>
+                    setEditingEntry((prev) =>
+                      prev ? { ...prev, faculty_id: Number(v) } : prev
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select faculty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {faculty.map((f) => (
+                      <SelectItem key={f.id} value={String(f.id)}>
+                        {f.f_name} {f.l_name ?? ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    setEditingEntry(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!editingEntry) return;
+                    // call update using the entry id (this will hit /add_slot/:id)
+                    await handleUpdateSlot({
+                      id: editingEntry.id,
+                      period_id: editingEntry.period_id,
+                      subject_id:
+                        editingEntry.subject_id !== undefined
+                          ? editingEntry.subject_id
+                          : null,
+                      faculty_id:
+                        editingEntry.faculty_id !== undefined
+                          ? editingEntry.faculty_id
+                          : null,
+                    });
+                  }}
+                >
+                  Save changes
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    // open delete dialog with the actual id
+                    if (!editingEntry) return;
+                    setDeletingEntryId(editingEntry.id);
+                    setIsDeleteOpen(true);
+                  }}
+                >
+                  Delete
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="py-8">
+              <LoadingSpinner text="Preparing editor..." />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ----------------- Delete Confirmation ----------------- */}
+      <AlertDialog
+        open={isDeleteOpen}
+        onOpenChange={(open) => !open && setIsDeleteOpen(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Timetable Entry</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setIsDeleteOpen(false);
+                setDeletingEntryId(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (deletingEntryId) {
+                  // DELETE uses id at /add_slot/:id
+                  await handleDeleteSlot(deletingEntryId);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

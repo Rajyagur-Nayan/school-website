@@ -5,19 +5,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  Megaphone,
   CalendarDays,
   UserCheck,
   ClipboardList,
   LogOut,
   Menu,
   X,
-  UserCog,
-  Plus,
-  UmbrellaIcon,
-  Users,
   LayoutDashboard,
+  Users,
+  UserCog,
   IndianRupee,
+  Megaphone,
+  UmbrellaIcon,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,32 +41,31 @@ const teacherItems = [
   },
 
   { title: "Add Student useing Excel", icon: Users, href: "/add-student" },
-  { title: "Fee's", icon: IndianRupee, href: "/fee-management" },
-  { title: "Exam's", icon: ClipboardList, href: "/exam-management" },
   {
     title: "Student Attendance",
     icon: UserCheck,
     href: "/attendance-management",
   },
+  { title: "Staff Management", icon: UserCog, href: "/staff-management" },
   {
     title: "feculty Attendance",
     icon: UserCheck,
     href: "/staff-attendance",
   },
+  { title: "Exam's", icon: ClipboardList, href: "/exam-management" },
+  { title: "Fee's", icon: IndianRupee, href: "/fee-management" },
   {
     title: "Timetable",
     icon: CalendarDays,
     href: "/timetable-management/view",
   },
-  { title: "Staff Management", icon: UserCog, href: "/staff-management" },
-  { title: "Add Department", icon: Plus, href: "/add-school" },
-
   { title: "Events", icon: Megaphone, href: "/event-management" },
   {
     title: "Holidayes",
     icon: UmbrellaIcon,
     href: "/holiday-management",
   },
+  { title: "Add Department", icon: Plus, href: "/add-school" },
 ];
 
 // ---------------- SIDEBAR ----------------
@@ -116,12 +115,14 @@ function Sidebar({
     return null;
   }
 
-  // --- ONLY show parentItems when the stored role is "parent" ---
-  const sidebarLinks = teacherItems;
+  // NOTE: previously you only rendered items when userRole === "parent" which will cause an empty sidebar
+  // Make menuItems configurable. For now we'll render parentItems for all roles — adjust logic as you need.
+  const menuItems = teacherItems; // always show teacher items (role logic removed)
+  // <-- change this if you want role-based menus
 
   return (
     <>
-      {/* ===== MOBILE TOP BAR ===== */}
+      {/* ===== MOBILE TOP BAR (small screens): 3 buttons: notifications, avatar, menu ===== */}
       <div className="lg:hidden fixed top-0 left-0 w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-50">
         <Link href="/home" className="flex items-center gap-3">
           <Image
@@ -135,6 +136,72 @@ function Sidebar({
             SMV Highschool
           </span>
         </Link>
+
+        <div className="flex items-center gap-2">
+          {/* Avatar / Dropdown */}
+          {token && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative h-10 w-10 rounded-full"
+                >
+                  <Avatar className="h-9 w-9 border">
+                    <AvatarImage
+                      src={user?.avatarUrl || "/user-avtar.png"}
+                      alt="User"
+                    />
+                    <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent className="w-48" align="end">
+                <DropdownMenuLabel>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {userRole || "No role"}
+                  </p>
+                </DropdownMenuLabel>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onSelect={handleLogout}
+                  className="text-red-600 cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Menu toggle */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-slate-800 dark:text-slate-200"
+          >
+            {isOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
+        </div>
+      </div>
+
+      {/* ===== DESKTOP TOP NAVBAR (lg+) ===== */}
+      <header className="hidden lg:flex items-center justify-between px-6 py-3 fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-40">
+        <div className="flex items-center gap-4">
+          <Link href="/home" className="flex items-center gap-3">
+            <Image
+              src="/school-logo.jpg"
+              alt="School Logo"
+              width={40}
+              height={40}
+              className="object-contain rounded"
+            />
+            <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+              SMV Highschool
+            </span>
+          </Link>
+        </div>
 
         <div className="flex items-center gap-3">
           {token && (
@@ -173,44 +240,45 @@ function Sidebar({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-slate-800 dark:text-slate-200"
-          >
-            {isOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
         </div>
-      </div>
+      </header>
 
+      {/* ===== SIDEBAR ===== */}
       {/* ===== SIDEBAR ===== */}
       <aside
         onMouseEnter={() => setIsHoverOpen(true)}
         onMouseLeave={() => setIsHoverOpen(false)}
-        className={`fixed top-16 left-0 h-180 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-md flex flex-col transition-all duration-300 ease-in-out z-40
-        ${isOpen ? "translate-x-0 w-72" : "-translate-x-full"}
-        lg:translate-x-0 ${isHoverOpen ? "lg:w-70" : "lg:w-20"}`}
+        className={`fixed top-16 left-0 h-[calc(100vh-64px)] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-md flex flex-col transition-all duration-300 ease-in-out z-40
+    ${isOpen ? "translate-x-0 w-72" : "-translate-x-full"}
+    lg:translate-x-0 lg:top-16 lg:left-0 lg:shadow-none lg:fixed lg:h-[calc(100vh-64px)] lg:overflow-visible
+    ${isHoverOpen ? "lg:w-72" : "lg:w-20"}`}
       >
         <nav className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-1">
-          {sidebarLinks.map((link) => {
+          {menuItems.map((link) => {
             const isActive = pathname.startsWith(link.href);
+            const showLabel = isHoverOpen || isOpen;
+
             return (
               <Link
                 key={link.title}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
+                title={link.title}
                 className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200"
                     : "text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
-                <link.icon
+                <div
                   className={`flex-shrink-0 transition-all duration-300 ${
-                    isHoverOpen || isOpen ? "h-6 w-6" : "h-6 w-6 mx-auto"
+                    showLabel ? "h-6 w-6" : "h-6 w-6 mx-auto"
                   }`}
-                />
-                {(isHoverOpen || isOpen) && (
+                >
+                  <link.icon />
+                </div>
+
+                {showLabel && (
                   <span className="ml-4 whitespace-nowrap">{link.title}</span>
                 )}
               </Link>
@@ -219,6 +287,7 @@ function Sidebar({
         </nav>
       </aside>
 
+      {/* Overlay for mobile when sidebar is open */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
@@ -241,11 +310,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Main Content */}
         <main
-          className={`
-            flex-1 overflow-y-auto p-4 sm:p-6 mt-16
-            transition-all duration-300 ease-in-out
-            ${isSidebarOpen ? "lg:ml-72" : "lg:ml-20"}
-          `}
+          className={`flex-1 overflow-y-auto p-4 sm:p-6 mt-16 transition-all duration-300 ease-in-out lg:mt-16 lg:pl-4 lg:pr-4 ${
+            isSidebarOpen ? "lg:ml-72" : "lg:ml-20"
+          }`}
         >
           {children}
         </main>
