@@ -93,10 +93,14 @@ export default function UnifiedLoginPage() {
         withCredentials: true,
       });
 
+      console.log(response);
+
       const userRole =
         response.data?.admin?.role || response.data?.college?.role;
       const token = response.data?.token;
+      const class_id = response.data?.class_id;
       if (userRole && token) {
+        localStorage.setItem("class_id", class_id);
         localStorage.setItem("user_role", userRole);
         localStorage.setItem("token", token); // ✅ Store token in localStorage
         toast.success("Login successful!");

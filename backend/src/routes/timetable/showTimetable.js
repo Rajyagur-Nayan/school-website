@@ -16,34 +16,36 @@ router.get("/class/:classId", async (req, res) => {
       return res.status(400).json({ error: "Invalid Class ID." });
     }
 
-    // The query joins all necessary tables to produce a human-readable schedule.
+    // The query joins all necessary tables and returns period_id + class_id
     const timetable = await pool.query(
       `
-            SELECT 
-                p.day,
-                p.period_number,
-                p.start_time,
-                p.end_time,
-                s.subject_name,
-                t.id,
-                f.f_name,
-                f.l_name
-            FROM timetable t
-            JOIN periods p ON t.period_id = p.id
-            JOIN subjects s ON t.subject_id = s.id
-            JOIN faculty f ON t.faculty_id = f.id
-            WHERE t.class_id = $1
-            ORDER BY 
-                CASE p.day
-                    WHEN 'Monday' THEN 1
-                    WHEN 'Tuesday' THEN 2
-                    WHEN 'Wednesday' THEN 3
-                    WHEN 'Thursday' THEN 4
-                    WHEN 'Friday' THEN 5
-                    WHEN 'Saturday' THEN 6
-                END,
-                p.period_number;
-        `,
+      SELECT 
+        t.id AS timetable_id,
+        t.class_id AS class_id,
+        p.id AS period_id,
+        p.day,
+        p.period_number,
+        p.start_time,
+        p.end_time,
+        s.subject_name,
+        f.f_name,
+        f.l_name
+      FROM timetable t
+      JOIN periods p ON t.period_id = p.id
+      JOIN subjects s ON t.subject_id = s.id
+      JOIN faculty f ON t.faculty_id = f.id
+      WHERE t.class_id = $1
+      ORDER BY 
+        CASE p.day
+          WHEN 'Monday' THEN 1
+          WHEN 'Tuesday' THEN 2
+          WHEN 'Wednesday' THEN 3
+          WHEN 'Thursday' THEN 4
+          WHEN 'Friday' THEN 5
+          WHEN 'Saturday' THEN 6
+        END,
+        p.period_number;
+    `,
       [classId]
     );
 
@@ -77,11 +79,6 @@ function formatTime12Hour(timeString) {
   }); // Output will be "11:30 PM"
 }
 
-// Example usage in your frontend component:
-// const period = { start_time: "23:30:00", end_time: "09:00:00" };
-// console.log(formatTime12Hour(period.start_time)); // "11:30 PM"
-// console.log(formatTime12Hour(period.end_time));   // "09:00 AM"
-
 // --- GET TIMETABLE FOR A SPECIFIC FACULTY MEMBER (for faculty) ---
 /**
  * @route   GET /api/timetable/faculty/:facultyId
@@ -97,31 +94,33 @@ router.get("/faculty/:facultyId", async (req, res) => {
 
     const schedule = await pool.query(
       `
-            SELECT 
-                p.day,
-                p.period_number,
-                p.start_time,
-                p.end_time,
-                s.subject_name,
-                t.id,
-                c.standard,
-                c.division
-            FROM timetable t
-            JOIN periods p ON t.period_id = p.id
-            JOIN subjects s ON t.subject_id = s.id
-            JOIN classes c ON t.class_id = c.id
-            WHERE t.faculty_id = $1
-            ORDER BY 
-                CASE p.day
-                    WHEN 'Monday' THEN 1
-                    WHEN 'Tuesday' THEN 2
-                    WHEN 'Wednesday' THEN 3
-                    WHEN 'Thursday' THEN 4
-                    WHEN 'Friday' THEN 5
-                    WHEN 'Saturday' THEN 6
-                END,
-                p.period_number;
-        `,
+      SELECT 
+        t.id AS timetable_id,
+        t.class_id AS class_id,
+        p.id AS period_id,
+        p.day,
+        p.period_number,
+        p.start_time,
+        p.end_time,
+        s.subject_name,
+        c.standard,
+        c.division
+      FROM timetable t
+      JOIN periods p ON t.period_id = p.id
+      JOIN subjects s ON t.subject_id = s.id
+      JOIN classes c ON t.class_id = c.id
+      WHERE t.faculty_id = $1
+      ORDER BY 
+        CASE p.day
+          WHEN 'Monday' THEN 1
+          WHEN 'Tuesday' THEN 2
+          WHEN 'Wednesday' THEN 3
+          WHEN 'Thursday' THEN 4
+          WHEN 'Friday' THEN 5
+          WHEN 'Saturday' THEN 6
+        END,
+        p.period_number;
+    `,
       [facultyId]
     );
 

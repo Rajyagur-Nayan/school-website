@@ -100,11 +100,9 @@ export function PrintableFeeReceipt(props: FeeReceiptProps) {
               height={60}
             />
             <div>
-              <h1 className="text-2xl font-bold">
-                Rajkot International School
-              </h1>
+              <h1 className="text-2xl font-bold">S.M.V School</h1>
               <p className="text-sm text-muted-foreground print-text-muted">
-                Kalawad Road, Rajkot, Gujarat 360005
+                Birls Plot Dwarka-361335
               </p>
             </div>
           </div>
