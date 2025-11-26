@@ -1,2 +1,0 @@
-check fees routes
-add faculty id in exam
