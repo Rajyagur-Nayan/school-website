@@ -65,14 +65,14 @@ const manageTasks = [
 export default function TimetableDashboardPage() {
   return (
     <div className="p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-900/50 min-h-screen rounded-lg">
-      <div className="mb-8">
+      <Link href="/timetable-management/view" className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
           Timetable Management
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Select a task to manage school schedules, periods, and assignments.
         </p>
-      </div>
+      </Link>
 
       {/* --- View Timetables Category --- */}
       <div className="mb-10">

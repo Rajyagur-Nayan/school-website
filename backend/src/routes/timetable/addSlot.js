@@ -99,66 +99,52 @@ router.post("/", async (req, res) => {
 });
 
 // --- UPDATE A TIMETABLE ENTRY (PATCH) ---
-/**
- * @route   PATCH /api/admin/timetable/:id
- * @desc    Update a specific timetable entry by ID
- * @access  Private (Admin Only)
- */
+// PATCH - update fields for a timetable row by id, checking conflict ONLY on period_id
 router.patch("/:id", async (req, res) => {
   const { id } = req.params;
-  const { period_id, subject_id, faculty_id } = req.body;
+  // Accept class_id too (can be updated), but conflict check will use only period_id
+  const { period_id, class_id, subject_id, faculty_id } = req.body;
 
-  // Build updates dynamically as you do already
-  const updates = { period_id, subject_id, faculty_id };
+  // collect only provided values for update
+  const updates = { period_id, class_id, subject_id, faculty_id };
   const fields = Object.keys(updates).filter((k) => updates[k] !== undefined);
 
   if (fields.length === 0) {
     return res.status(400).json({ error: "No fields provided for update." });
   }
 
-  const values = fields.map((k) => updates[k]);
-
   try {
-    // If period_id and class_id are being changed, check conflict
-    if (period_id !== undefined) {
-      const conflictCheck = await pool.query(
-        `SELECT id FROM timetable WHERE period_id = $1 AND id <> $2 LIMIT 1`,
-        [period_id, id]
-      );
-      if (conflictCheck.rowCount > 0) {
-        return res.status(409).json({
-          error:
-            "Another timetable entry already occupies that Period + Class slot.",
-        });
-      }
-    } else if (period_id !== undefined) {
-      // If only one of them provided, fetch existing other value to form full slot check
-      const rowRes = await pool.query(
-        "SELECT period_id FROM timetable WHERE id = $1",
-        [id]
-      );
-      if (rowRes.rowCount === 0)
-        return res.status(404).json({ error: "Timetable entry not found." });
-      const existing = rowRes.rows[0];
-      const newPeriod =
-        period_id !== undefined ? period_id : existing.period_id;
-
-      const conflictCheck = await pool.query(
-        `SELECT id FROM timetable WHERE period_id = $1 AND id <> $2 LIMIT 1`,
-        [newPeriod, id]
-      );
-      if (conflictCheck.rowCount > 0) {
-        return res.status(409).json({
-          error:
-            "Another timetable entry already occupies that Period + Class slot.",
-        });
-      }
+    // Ensure row exists and get current values
+    const existingRes = await pool.query(
+      "SELECT period_id FROM timetable WHERE id = $1",
+      [id]
+    );
+    if (existingRes.rowCount === 0) {
+      return res.status(404).json({ error: "Timetable entry not found." });
     }
 
-    // Build SET clause
+    const existing = existingRes.rows[0];
+    // Determine final period (use provided or fall back to existing)
+    const newPeriod = period_id !== undefined ? period_id : existing.period_id;
+
+    // Check for conflict: another row with same period_id (ignoring class_id)
+    const conflictCheck = await pool.query(
+      `SELECT id FROM timetable WHERE period_id = $1 AND id <> $2 LIMIT 1`,
+      [newPeriod, id]
+    );
+    if (conflictCheck.rowCount > 0) {
+      return res.status(409).json({
+        error: "Another timetable entry already occupies that Period slot.",
+      });
+    }
+
+    // Build SET clause dynamically
     const setClause = fields
-      .map((key, index) => `${key} = $${index + 1}`)
+      .map((key, idx) => `${key} = $${idx + 1}`)
       .join(", ");
+
+    const values = fields.map((k) => updates[k]);
+    // push id as last parameter for WHERE
     values.push(id);
 
     const result = await pool.query(
@@ -166,32 +152,26 @@ router.patch("/:id", async (req, res) => {
       values
     );
 
-    if (result.rowCount === 0)
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: "Timetable entry not found." });
+    }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Timetable entry updated successfully.",
       entry: result.rows[0],
     });
   } catch (err) {
     console.error("Update Timetable Error:", err);
-    if (err.code === "23505") {
+    if (err && err.code === "23505") {
       return res.status(409).json({
-        error: "A timetable entry already exists for this Period and Class.",
+        error: "A timetable entry already exists for this Period.",
       });
     }
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// --- DELETE A TIMETABLE ENTRY (DELETE) ---
-/**
- * @route   DELETE /api/admin/timetable/:id
- * @desc    Delete a specific timetable entry by ID
- * @access  Private (Admin Only)
- */
-// DELETE by DB id:
-// DELETE /api/admin/timetable/:id
+// DELETE - delete a timetable row by id
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: "Missing id parameter." });
@@ -210,40 +190,6 @@ router.delete("/:id", async (req, res) => {
     });
   } catch (err) {
     console.error("Delete by id failed:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// DELETE by slot (period_id + class_id) via query params:
-// DELETE /api/admin/timetable?period_id=1&class_id=2
-router.delete("/", async (req, res) => {
-  const period_id = req.query.period_id ? Number(req.query.period_id) : null;
-
-  if (!period_id) {
-    return res.status(400).json({
-      error:
-        "Provide period_id and class_id as query parameters to delete by slot. Example: /api/admin/timetable?period_id=1&class_id=2",
-    });
-  }
-
-  try {
-    const result = await pool.query(
-      "DELETE FROM timetable WHERE period_id = $1 AND class_id = $2 RETURNING *",
-      [period_id, class_id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        error: "Timetable slot not found for the given period and class.",
-      });
-    }
-
-    return res.status(200).json({
-      message: "Timetable slot deleted successfully.",
-      deleted: result.rows[0],
-    });
-  } catch (err) {
-    console.error("Delete by slot failed:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -422,61 +422,55 @@ export function ClassTimetable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFacultyId]);
 
-  // Helper: check for duplicate (period_id,class_id) already in DB for the class
+  // Helper: check for duplicate by period_id only (client-side)
+  // NOTE: This function checks only period_id values in the loaded classTimetable,
+  // and ignores class_id entirely (per your requirement).
   const checkDuplicatePeriod = async (
-    class_id: number,
     period_id: number,
     ignoreId?: number | null
   ) => {
     try {
-      // Use the class timetable already in state to check for duplicates client-side (fast)
-      // Look through classTimetable to find any entry with same period_number and that has meta.class_id === class_id
-      for (const day of Object.keys(classTimetable)) {
-        const periods = classTimetable[day];
-        for (const p of Object.keys(periods)) {
-          const cell = periods[Number(p)];
+      for (const dayKey of Object.keys(classTimetable)) {
+        const periods = classTimetable[dayKey];
+        for (const pKey of Object.keys(periods)) {
+          const cell = periods[Number(pKey)];
           const meta = cell?.meta;
           if (!meta) continue;
-          const metaId = meta.id ?? meta.period_id ?? null;
-          const metaPeriodNumber = meta.period_number ?? meta.period_id ?? null;
-          const metaClassId = meta.class_id ?? meta.class ?? class_id;
-          // if it matches target pair and not the same row (ignoreId), it's a duplicate
+
+          // determine the stored period identifier for the slot
+          // meta may contain period_id or period_number depending on API shape
+          const metaPeriodId = meta.period_id ?? meta.period_number ?? null;
+          // determine the stored row id used for routes (could be meta.id or meta.period_id)
+          const metaRowId = meta.id ?? meta.period_id ?? null;
+
           if (
-            Number(metaPeriodNumber) === Number(period_id) &&
-            Number(metaClassId) === Number(class_id) &&
-            (ignoreId == null || Number(metaId) !== Number(ignoreId))
+            metaPeriodId != null &&
+            Number(metaPeriodId) === Number(period_id) &&
+            (ignoreId == null || Number(metaRowId) !== Number(ignoreId))
           ) {
+            // found another slot using the same period_id
             return true;
           }
         }
       }
-      // If not found in client state, fall back to server validation endpoint (optional)
-      // NOTE: If you have a dedicated endpoint to check, call it here. Otherwise rely on server-side constraint.
       return false;
     } catch (err) {
-      // If anything fails, be conservative and return false (let server catch it)
+      // be conservative: return false and let server handle final validation
       return false;
     }
   };
 
   // ------- PATCH (update) handler for a timetable entry -------
+  // ------- PATCH (update) handler for a timetable entry -------
+  // payload.id is still preferred (DB row id). If server replies 404 we retry using period_id.
   const handleUpdateSlot = async (payload: {
     id: number;
     period_id: number;
     subject_id: number | null;
     faculty_id: number | null;
   }) => {
-    try {
-      // Client-side duplicate check: prevent obvious conflicts
-      const isDup = await checkDuplicatePeriod(payload.period_id, payload.id);
-      if (isDup) {
-        toast.error(
-          `Period ${payload.period_id} is already assigned for this class. Choose a different period.`
-        );
-        return null;
-      }
-
-      // Build form urlencoded params
+    const tryPatch = async (targetId: number | string) => {
+      const url = `${API_URL}/add_slot/${targetId}`;
       const params = new URLSearchParams();
       params.append("period_id", String(payload.period_id));
       if (payload.subject_id !== null && payload.subject_id !== undefined)
@@ -484,39 +478,67 @@ export function ClassTimetable() {
       if (payload.faculty_id !== null && payload.faculty_id !== undefined)
         params.append("faculty_id", String(payload.faculty_id));
 
-      const res = await axios.patch(
-        `${API_URL}/add_slot/${payload.id}`,
-        params,
-        {
+      console.log("[Timetable] PATCH", {
+        url,
+        body: Object.fromEntries(params),
+      });
+
+      try {
+        const res = await axios.patch(url, params, {
           withCredentials: true,
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
-      );
+        });
+        console.log("[Timetable] PATCH success", res.data);
+        return res;
+      } catch (err: any) {
+        console.error("[Timetable] PATCH failed", {
+          url,
+          status: err?.response?.status,
+          data: err?.response?.data,
+          message: err?.message,
+        });
+        throw err;
+      }
+    };
 
+    try {
+      // first try with payload.id (most common)
+      const res = await tryPatch(payload.id);
       toast.success("Timetable entry updated successfully.");
-      // Refresh whichever timetable is visible
       if (selectedClassId) await fetchClassTimetable(selectedClassId);
       if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
-      // close edit dialog
       setIsEditOpen(false);
       setEditingEntry(null);
       return res.data;
     } catch (err: any) {
-      console.error("Update slot failed:", err);
+      // If 404, retry once with period_id (some backends expect that)
+      if (err?.response?.status === 404 && payload.period_id) {
+        try {
+          console.warn(
+            "[Timetable] Original PATCH returned 404 — retrying with period_id..."
+          );
+          const res2 = await tryPatch(payload.period_id);
+          toast.success(
+            "Timetable entry updated successfully (using period_id)."
+          );
+          if (selectedClassId) await fetchClassTimetable(selectedClassId);
+          if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
+          setIsEditOpen(false);
+          setEditingEntry(null);
+          return res2.data;
+        } catch (err2: any) {
+          const backendMsg =
+            err2?.response?.data?.error || err2?.response?.data?.message;
+          toast.error(backendMsg || "Failed to update timetable entry.");
+          return null;
+        }
+      }
 
-      // Many backends include error.code (e.g. '23505') inside response.data; check that
+      // otherwise show backend message if available
       const backendMsg =
         err?.response?.data?.error || err?.response?.data?.message;
-
-      if (
-        (err?.response?.data &&
-          String(err?.response?.data)?.includes("23505")) ||
-        err?.response?.status === 400 ||
-        (backendMsg && String(backendMsg).toLowerCase().includes("period"))
-      ) {
-        toast.error(
-          "A timetable slot for that period and class already exists. Please choose another period."
-        );
+      if (backendMsg) {
+        toast.error(backendMsg);
       } else {
         toast.error("Failed to update timetable entry.");
       }
@@ -525,20 +547,59 @@ export function ClassTimetable() {
   };
 
   // ------- DELETE handler for a timetable entry -------
-  const handleDeleteSlot = async (id: number) => {
+  // Try delete by id, if 404 then retry with period_id (safe fallback)
+  const handleDeleteSlot = async (id: number, fallbackPeriodId?: number) => {
+    const tryDelete = async (targetId: number | string) => {
+      const url = `${API_URL}/add_slot/${targetId}`;
+      console.log("[Timetable] DELETE", { url });
+      try {
+        const res = await axios.delete(url, { withCredentials: true });
+        console.log("[Timetable] DELETE success", res.data);
+        return res;
+      } catch (err: any) {
+        console.error("[Timetable] DELETE failed", {
+          url,
+          status: err?.response?.status,
+          data: err?.response?.data,
+          message: err?.message,
+        });
+        throw err;
+      }
+    };
+
     try {
-      await axios.delete(`${API_URL}/add_slot/${id}`, {
-        withCredentials: true,
-      });
+      await tryDelete(id);
       toast.success("Timetable entry deleted successfully.");
-      // refresh visible timetable
       if (selectedClassId) await fetchClassTimetable(selectedClassId);
       if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
       setIsDeleteOpen(false);
       setDeletingEntryId(null);
-    } catch (err) {
-      console.error("Delete slot failed:", err);
-      toast.error("Failed to delete timetable entry.");
+    } catch (err: any) {
+      if (err?.response?.status === 404 && fallbackPeriodId) {
+        try {
+          console.warn(
+            "[Timetable] Original DELETE returned 404 — retrying with period_id..."
+          );
+          await tryDelete(fallbackPeriodId);
+          toast.success(
+            "Timetable entry deleted successfully (using period_id)."
+          );
+          if (selectedClassId) await fetchClassTimetable(selectedClassId);
+          if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
+          setIsDeleteOpen(false);
+          setDeletingEntryId(null);
+          return;
+        } catch (err2: any) {
+          const backendMsg =
+            err2?.response?.data?.error || err2?.response?.data?.message;
+          toast.error(backendMsg || "Failed to delete timetable entry.");
+          return;
+        }
+      }
+
+      const backendMsg =
+        err?.response?.data?.error || err?.response?.data?.message;
+      toast.error(backendMsg || "Failed to delete timetable entry.");
     }
   };
 
