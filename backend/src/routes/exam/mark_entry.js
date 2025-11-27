@@ -122,7 +122,7 @@ router.get("/exam/:examScheduleId", async (req, res) => {
       `
             SELECT 
                 s.student_name,
-                s.admission_number,
+                s.gr_no,
                 es.total_marks,
                 -- CORE LOGIC: Translate -1 back to a display-friendly string
                 CASE 

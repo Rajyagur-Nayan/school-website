@@ -73,8 +73,12 @@ export function CollectFee() {
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>(students);
 
   const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/fee_payment`;
+  useEffect(() => {
+    setFilteredStudents(students);
+  }, [students]);
 
   // --------- Fetch Students ----------
   const fetchStudents = async () => {
@@ -217,19 +221,47 @@ export function CollectFee() {
         <CardContent>
           <div className="space-y-2 mb-6">
             <Label>Select Student</Label>
+
             <Select
               onValueChange={setSelectedStudentId}
               value={selectedStudentId}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Search by student name or admission ID..." />
+                <SelectValue placeholder="Search by student name or GR No..." />
               </SelectTrigger>
+
               <SelectContent>
-                {students.map((s) => (
+                {/* 🔍 Search Bar */}
+                <div className="px-2 py-1">
+                  <Input
+                    placeholder="Search..."
+                    className="h-8"
+                    onChange={(e) => {
+                      const keyword = e.target.value.toLowerCase();
+                      const filtered = students.filter((s) =>
+                        s.display_name.toLowerCase().includes(keyword)
+                      );
+                      setFilteredStudents(filtered);
+                    }}
+                  />
+                </div>
+
+                {/* Student List */}
+                {(filteredStudents.length > 0
+                  ? filteredStudents
+                  : students
+                ).map((s) => (
                   <SelectItem key={s.id} value={String(s.id)}>
                     {s.display_name}
                   </SelectItem>
                 ))}
+
+                {/* No results */}
+                {filteredStudents.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-2">
+                    No students found.
+                  </p>
+                )}
               </SelectContent>
             </Select>
           </div>
