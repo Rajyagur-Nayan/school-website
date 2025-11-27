@@ -43,14 +43,10 @@ router.post("/", async (req, res) => {
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
 
-      if (
-        !student.admission_number ||
-        !student.student_name ||
-        !student.class_id
-      ) {
+      if (!student.gr_no || !student.student_name || !student.class_id) {
         errorMessage = `Invalid data at row ${
           i + 1
-        }. 'admission_number', 'student_name', and 'class_id' are all required.`;
+        }. 'gr_no', 'student_name', and 'class_id' are all required.`;
         invalidStudent = student;
         break;
       }
@@ -80,7 +76,7 @@ router.post("/", async (req, res) => {
     // --- MODIFIED 'columns' ARRAY ---
     // This array now matches all the fields you provided
     const columns = [
-      "admission_number",
+      "gr_no",
       "student_name",
       "date_of_birth",
       "place_of_birth",
@@ -107,7 +103,7 @@ router.post("/", async (req, res) => {
     // --- MODIFIED .map() SECTION ---
     // This now maps all 22 fields, using null as a fallback for optional ones
     const values = students.map((student) => [
-      student.admission_number, // Required
+      student.gr_no, // Required
       student.student_name, // Required
       formatDateToISO(student.date_of_birth), // Use helper
       student.place_of_birth || null,
@@ -174,7 +170,7 @@ router.get("/", async (req, res) => {
   try {
     const students = await pool.query(`
 SELECT 
-  s.id, s.admission_number, s.student_name,
+  s.id, s.gr_no, s.student_name,
   c.standard, c.division, s.status, s.caste_category, s.community
 FROM student s
 JOIN classes c ON s.class_id = c.id

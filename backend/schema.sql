@@ -109,7 +109,7 @@ EXECUTE FUNCTION update_updated_at_column();
 CREATE TABLE students (
     -- Core Student Information (still required)
     id SERIAL PRIMARY KEY,
-    admission_number VARCHAR(50) UNIQUE NOT NULL,
+    gr_no VARCHAR(50) UNIQUE NOT NULL,
     student_name VARCHAR(100) NOT NULL,
     
     -- Academic Information (class is required)
