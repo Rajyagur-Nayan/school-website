@@ -130,7 +130,7 @@ function Sidebar({
               className="object-contain rounded"
             />
             <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-              SMV Highschool
+              SMV school Dwarka
             </span>
           </Link>
         </div>
@@ -146,7 +146,7 @@ function Sidebar({
               className="object-contain rounded"
             />
             <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-              SMV Highschool
+              SMV school Dwarka
             </span>
           </Link>
         </header>
