@@ -398,4 +398,71 @@ router.get("/:studentId/exam-results", getStudentInfo, async (req, res) => {
 });
 // --- *** END OF NEW ROUTE *** ---
 
+router.get("/student-report/:studentId", async (req, res) => {
+  const { studentId } = req.params;
+  let client;
+
+  try {
+    client = await pool.connect();
+    
+    const query = `
+      WITH subject_stats AS (
+        -- Step 1: Calculate performance per subject
+        SELECT 
+          s.subject_name,
+          COALESCE(SUM(em.marks_obtained), 0) as obtained,
+          COALESCE(SUM(es.total_marks), 0) as total,
+          CASE 
+            WHEN SUM(es.total_marks) > 0 THEN 
+              ROUND((SUM(em.marks_obtained)::numeric / SUM(es.total_marks)) * 100, 2)
+            ELSE 0 
+          END as percentage
+        FROM exam_marks em
+        JOIN exam_schedule es ON em.exam_schedule_id = es.id
+        JOIN subjects s ON es.subject_id = s.id
+        WHERE em.student_id = $1
+        GROUP BY s.subject_name
+      ),
+      overall_stats AS (
+        -- Step 2: Calculate overall performance across all subjects
+        SELECT 
+          COALESCE(SUM(obtained), 0) as total_obtained,
+          COALESCE(SUM(total), 0) as total_possible,
+          CASE 
+            WHEN SUM(total) > 0 THEN 
+              ROUND((SUM(obtained)::numeric / SUM(total)) * 100, 2)
+            ELSE 0 
+          END as overall_percentage
+        FROM subject_stats
+      )
+      -- Step 3: Combine both into a single JSON response
+      SELECT 
+        json_build_object(
+          'student_id', $1::int,
+          'overall', (SELECT row_to_json(overall_stats) FROM overall_stats),
+          'subjects', (SELECT json_agg(subject_stats) FROM subject_stats)
+        ) as report;
+    `;
+
+    const { rows } = await client.query(query, [studentId]);
+
+    // If the student exists but has no exams, rows[0].report.subjects might be null.
+    // We handle that gracefully in the response.
+    const report = rows[0]?.report || {};
+    
+    if (!report.subjects) {
+       report.subjects = [];
+       report.overall = { total_obtained: 0, total_possible: 0, overall_percentage: 0 };
+    }
+
+    res.status(200).json(report);
+
+  } catch (err) {
+    console.error("Complete Student Report Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    if (client) client.release();
+  }
+});
+
 module.exports = router;

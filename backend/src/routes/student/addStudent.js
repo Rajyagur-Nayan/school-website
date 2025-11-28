@@ -2,28 +2,14 @@ const express = require("express");
 const pool = require("../../connections/DB.connect.js");
 const multer = require("multer");
 const path = require("path");
-const {
-  uploadToCloudinary,
-} = require("../../controllers/cloudinaryUploader.js");
 
 const router = express.Router();
 
-// --- Multer Configuration (remains the same) ---
-const upload = multer({ dest: "uploads/" }).fields([
-  { name: "student_photo", maxCount: 1 },
-]);
 
 // *** THIS IS THE MODIFIED SECTION ***
-router.post("/", upload, async (req, res) => {
-  const { ...studentData } = req.body;
-  const files = req.files;
-
+router.post("/", async (req, res) => {
   try {
-    const studentPhotoFile = files?.student_photo?.[0];
-
-    const [student_photo_url] = await Promise.all([
-      uploadToCloudinary(studentPhotoFile),
-    ]);
+  const { ...studentData } = req.body;
 
     const studentQuery = `
 INSERT INTO student (
@@ -131,10 +117,9 @@ router.get("/last-admission-number", async (req, res) => {
  */
 // (No changes needed for this route, it's already dynamic)
 // This route now correctly listens for PUT requests
-router.patch("/:id", upload, async (req, res) => {
+router.patch("/:id", async (req, res) => {
   const { id } = req.params;
   const requestBody = { ...req.body };
-  const files = req.files;
 
   // --- NEW: Define ALL allowed fields in the 'student' table ---
   // IMPORTANT: You must update this list to match your database table columns!

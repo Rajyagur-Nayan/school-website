@@ -42,8 +42,11 @@ router.post("/", async (req, res) => {
       // --- CORE LOGIC: Translate null to -1 ---
       // If marks are null or undefined, store -1. Otherwise, store the actual marks.
       let marksToStore;
-      if (marks === "Absent") {
-        marksToStore = null; // Send a database NULL
+      if (
+        marks == null ||
+        isNaN(Number(marks))
+      ) {
+        marksToStore = null; // store NULL
       } else {
         marksToStore = parseInt(marks, 10);
       }
