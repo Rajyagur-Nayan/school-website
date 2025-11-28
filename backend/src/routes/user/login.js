@@ -41,7 +41,7 @@ router.post("/", async (req, res) => {
     }
 
     const studentRes = await pool.query(
-      "SELECT id, class_id FROM student WHERE admission_number = $1",
+      "SELECT id, class_id, student_name FROM student WHERE gr_no = $1",
       [grNo]
     );
 
@@ -54,11 +54,10 @@ router.post("/", async (req, res) => {
     const studentId = studentRes.rows[0].id;
 
     const data = {
-      id: user.id,
+      id: studentId,
       grNo: user.gr_no,
-      firstName: user.first_name, // Assuming you have first_name column
-      studentId: studentId,
-      role: user.role, // Include user role if available
+      student_name: studentRes.student_name
+
     };
     const token = generateToken(data);
 
@@ -67,8 +66,8 @@ router.post("/", async (req, res) => {
       message: "Login successful",
       token: token,
       student_id: studentId,
-      role: user.role,
-      class_id: studentRes.rows[0].class_id
+      class_id: studentRes.rows[0].class_id,
+      student_name: studentRes.rows[0].student_name
     }); // Send user data including role
   } catch (err) {
     console.error("Login error:", err);
