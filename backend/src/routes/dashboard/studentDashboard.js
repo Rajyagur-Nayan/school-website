@@ -465,4 +465,39 @@ router.get("/student-report/:studentId", async (req, res) => {
   }
 });
 
+router.get("/attendance/status", async (req, res) => {
+  const { studentId, date } = req.query; // getting data from URL params
+  let client;
+  
+  if (!studentId || !date) {
+    return res.status(400).json({ error: "Please provide studentId and date" });
+  }
+  try {
+  
+    client = await pool.connect();
+    
+    const query = `
+      SELECT status 
+      FROM daily_attendance 
+      WHERE student_id = $1 AND attendance_date = $2
+    `;
+
+    const { rows } = await client.query(query, [studentId, date]);
+
+    if (rows.length > 0) {
+      // Case 1: Record found (Present, Absent, or Late)
+      res.status(200).json({ status: rows[0].status });
+    } else {
+      // Case 2: No record found for this specific date
+      res.status(200).json({ status: "No Data" });
+    }
+
+  } catch (err) {
+    console.error("Get Attendance Status Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    if (client) client.release();
+  }
+});
+
 module.exports = router;

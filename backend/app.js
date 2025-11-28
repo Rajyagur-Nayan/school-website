@@ -71,7 +71,7 @@ app.get("/verify-session", (req, res) => {
 const axios = require('axios');
 
 setInterval(() => {
-  axios.get('https://shop-manager-t98e.onrender.com')
+  axios.get('https://school-website-q7a1.onrender.com')
     .then(() => console.log('Pinged server to keep alive'))
     .catch(err => console.error('Ping failed', err));
 }, 10 * 60 * 1000); // Every 10 minutes
