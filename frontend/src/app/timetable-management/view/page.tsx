@@ -9,8 +9,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  Users,
-  School,
   ChevronRight,
   Clock,
   BookOpen,
@@ -25,18 +23,6 @@ const viewTasks = [
     icon: CalendarDays,
     title: "Class & Teacher Timetable",
     description: "View the combined schedule for all classes and teachers.",
-  },
-  {
-    href: "/timetable-management/view/teacher-wise",
-    icon: Users,
-    title: "Teacher-wise Timetable",
-    description: "View the complete schedule for a specific teacher.",
-  },
-  {
-    href: "/timetable-management/view/class-wise",
-    icon: School,
-    title: "Class-wise Timetable",
-    description: "View the weekly schedule for a specific class, like '10-A'.",
   },
 ];
 
