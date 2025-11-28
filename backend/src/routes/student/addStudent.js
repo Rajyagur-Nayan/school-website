@@ -13,7 +13,6 @@ const upload = multer({ dest: "uploads/" }).fields([
   { name: "student_photo", maxCount: 1 },
 ]);
 
-// --- REGISTER A NEW STUDENT (POST /) ---
 // *** THIS IS THE MODIFIED SECTION ***
 router.post("/", upload, async (req, res) => {
   const { ...studentData } = req.body;
@@ -28,19 +27,19 @@ router.post("/", upload, async (req, res) => {
 
     const studentQuery = `
 INSERT INTO student (
-admission_number, student_name, date_of_birth, place_of_birth, gender, blood_group,
+gr_no, student_name, date_of_birth, place_of_birth, gender, blood_group,
  nationality, religion, class_id, admission_date, father_name, mother_name,
  parent_primary_phone, parent_secondary_phone, parent_email, address_line1, address_line2,
- city, state, pincode, student_photo_url,
+ city, state, pincode
  -- Added new fields
  community, caste_category 
  )
  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
-RETURNING id, admission_number, student_name;
+RETURNING id, gr_no, student_name;
 `;
 
     const values = [
-      studentData.admission_number,
+      studentData.gr_no,
       studentData.student_name,
       studentData.date_of_birth || null, // Handle null values
       studentData.place_of_birth || null,
@@ -141,7 +140,7 @@ router.patch("/:id", upload, async (req, res) => {
   // IMPORTANT: You must update this list to match your database table columns!
   const allowedFields = [
     "student_name",
-    "admission_number",
+    "gr_no",
     "status",
     "community",
     "caste_category",

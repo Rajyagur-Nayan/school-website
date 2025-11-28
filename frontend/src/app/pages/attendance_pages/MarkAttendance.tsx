@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -42,6 +42,7 @@ interface Class {
 interface Student {
   id: number;
   student_name: string;
+  gr_no?: string; // optional, API may provide it
 }
 type AttendanceStatus = "Present" | "Absent" | "Late";
 interface AttendanceRecord {
@@ -59,6 +60,7 @@ export function MarkAttendance() {
   const [attendanceStatus, setAttendanceStatus] = useState<
     Record<string, AttendanceRecord>
   >({});
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // 1. Fetch the list of classes for the dropdown
   useEffect(() => {
@@ -81,6 +83,7 @@ export function MarkAttendance() {
   useEffect(() => {
     if (!selectedClassId) {
       setStudents([]);
+      setAttendanceStatus({});
       return;
     }
 
@@ -93,27 +96,26 @@ export function MarkAttendance() {
         );
 
         const responseData = response.data;
-        console.log(responseData);
-        console.log(responseData);
-
-        // --- MODIFICATION START ---
-        // Instead of taking just the first key, get all values (which are arrays)
-        // and flatten them into a single student array.
+        // Flatten grouped result into a single array
         const allStudentsArrays = Object.values(responseData) as Student[][];
         const studentData: Student[] = allStudentsArrays.flat();
-        // --- MODIFICATION END ---
 
         setStudents(studentData);
-        // Initialize attendance status for the fetched students
+
+        // Initialize attendance status for the fetched students (keys as strings)
         const initialStatus: Record<string, AttendanceRecord> = {};
         studentData.forEach((student) => {
-          initialStatus[student.id] = { status: "Present", remarks: "" };
+          initialStatus[String(student.id)] = {
+            status: "Present",
+            remarks: "",
+          };
         });
         setAttendanceStatus(initialStatus);
       } catch (error) {
         console.log(error);
         toast.error("Failed to fetch students for this class.");
         setStudents([]);
+        setAttendanceStatus({});
       } finally {
         setIsLoading(false);
       }
@@ -139,9 +141,9 @@ export function MarkAttendance() {
   const handleSelectAll = (status: AttendanceStatus) => {
     const newStatus: Record<string, AttendanceRecord> = {};
     students.forEach((student) => {
-      newStatus[student.id] = {
+      newStatus[String(student.id)] = {
         status,
-        remarks: attendanceStatus[student.id]?.remarks || "",
+        remarks: attendanceStatus[String(student.id)]?.remarks || "",
       };
     });
     setAttendanceStatus(newStatus);
@@ -190,6 +192,17 @@ export function MarkAttendance() {
       setIsSubmitting(false);
     }
   };
+
+  // 5. Filtered students based on searchQuery
+  const filteredStudents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter((s) => {
+      const name = s.student_name?.toLowerCase() ?? "";
+      const gr = s.gr_no?.toLowerCase() ?? "";
+      return name.includes(q) || gr.includes(q);
+    });
+  }, [students, searchQuery]);
 
   return (
     <Card>
@@ -242,30 +255,43 @@ export function MarkAttendance() {
 
         {selectedClassId && (
           <>
-            <div className="flex items-center space-x-2 mb-4">
-              <Label className="text-sm font-medium">Mark All As:</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSelectAll("Present")}
-              >
-                Present
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSelectAll("Absent")}
-              >
-                Absent
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSelectAll("Late")}
-              >
-                Late
-              </Button>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Label className="text-sm font-medium">Mark All As:</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSelectAll("Present")}
+                >
+                  Present
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSelectAll("Absent")}
+                >
+                  Absent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSelectAll("Late")}
+                >
+                  Late
+                </Button>
+              </div>
+
+              {/* Search bar */}
+              <div className="flex items-center space-x-2">
+                <Input
+                  placeholder="Search student by name or GR no..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
             </div>
+
             <div className="border rounded-md">
               <Table>
                 <TableHeader>
@@ -283,24 +309,31 @@ export function MarkAttendance() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center h-24">
+                      <TableCell colSpan={4} className="text-center h-24">
                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                           <Loader2 className="h-5 w-5 animate-spin" />
                           <span>Loading students...</span>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : students.length > 0 ? (
-                    students.map((student, i) => (
+                  ) : filteredStudents.length > 0 ? (
+                    filteredStudents.map((student, i) => (
                       <TableRow key={student.id}>
                         <TableCell className="font-medium">{i + 1}</TableCell>
                         <TableCell className="font-medium">
-                          {student.student_name}
+                          <div className="flex flex-col">
+                            <span>{student.student_name}</span>
+                            {student.gr_no && (
+                              <small className="text-muted-foreground text-xs">
+                                GR: {student.gr_no}
+                              </small>
+                            )}
+                          </div>
                         </TableCell>
 
                         <TableCell className="text-center">
                           <RadioGroup
-                            value={attendanceStatus[student.id]?.status}
+                            value={attendanceStatus[String(student.id)]?.status}
                             onValueChange={(value) =>
                               handleStatusChange(
                                 String(student.id),
@@ -349,13 +382,15 @@ export function MarkAttendance() {
                         </TableCell>
 
                         <TableCell className="text-center">
-                          {attendanceStatus[student.id]?.status === "Absent" ? (
+                          {attendanceStatus[String(student.id)]?.status ===
+                          "Absent" ? (
                             <Input
                               type="text"
                               placeholder="Add remarks..."
                               className="h-8 w-full max-w-[200px] mx-auto"
                               value={
-                                attendanceStatus[student.id]?.remarks || ""
+                                attendanceStatus[String(student.id)]?.remarks ||
+                                ""
                               }
                               onChange={(e) =>
                                 handleRemarkChange(
@@ -375,7 +410,7 @@ export function MarkAttendance() {
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={3}
+                        colSpan={4}
                         className="text-center h-24 text-muted-foreground"
                       >
                         No students found for this class.
@@ -388,7 +423,7 @@ export function MarkAttendance() {
             <div className="flex justify-end mt-6">
               <Button
                 onClick={handleSubmit}
-                disabled={students.length === 0 || isSubmitting}
+                disabled={filteredStudents.length === 0 || isSubmitting}
               >
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

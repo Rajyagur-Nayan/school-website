@@ -49,11 +49,11 @@ interface ExamSchedule {
 interface Student {
   id: number; // The student's primary key ID
   student_name: string;
-  admission_number: string; // Needed to map fetched marks
+  gr_no: string; // Needed to map fetched marks
 }
 interface FetchedMark {
   student_name: string;
-  admission_number: string;
+  gr_no: string;
   total_marks: number;
   result: string | null; // Mark or "Absent" or null
 }
@@ -213,15 +213,12 @@ export function EnterMarks() {
 
       // This logic correctly reads "Absent" or "95" from the 'result' field
       fetchedMarks.forEach((mark) => {
-        marksMap.set(
-          mark.admission_number,
-          mark.result === null ? "" : mark.result
-        );
+        marksMap.set(mark.gr_no, mark.result === null ? "" : mark.result);
       });
 
       const initialMarks: Record<number, string> = {};
       students.forEach((student) => {
-        const savedMark = marksMap.get(student.admission_number);
+        const savedMark = marksMap.get(student.gr_no);
         initialMarks[student.id] = savedMark !== undefined ? savedMark : "";
       });
       setMarks(initialMarks);
@@ -383,9 +380,7 @@ export function EnterMarks() {
         student.student_name
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        student.admission_number
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())
+        student.gr_no.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [students, searchQuery]);
 
@@ -516,7 +511,7 @@ export function EnterMarks() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Enter Marks</h3>
               <Input
-                placeholder="Search by name or admission no..."
+                placeholder="Search by name or gr no..."
                 className="w-full md:w-1/3"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -527,7 +522,7 @@ export function EnterMarks() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Admission No.</TableHead>
+                  <TableHead>Gr No.</TableHead>
                   <TableHead>Student Name</TableHead>
                   <TableHead>Marks Obtained</TableHead>
                   <TableHead>Total Marks</TableHead>
@@ -538,7 +533,7 @@ export function EnterMarks() {
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map((student) => (
                     <TableRow key={student.id}>
-                      <TableCell>{student.admission_number}</TableCell>
+                      <TableCell>{student.gr_no}</TableCell>
                       <TableCell className="font-medium">
                         {student.student_name}
                       </TableCell>

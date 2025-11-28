@@ -73,8 +73,12 @@ export function CollectFee() {
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>(students);
 
   const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/fee_payment`;
+  useEffect(() => {
+    setFilteredStudents(students);
+  }, [students]);
 
   // --------- Fetch Students ----------
   const fetchStudents = async () => {
@@ -119,60 +123,76 @@ export function CollectFee() {
   // --- MODIFIED ---
   // This function is updated to pass the new totals
   const recordPayment = async () => {
-    if (!selectedStudentId || !amountPaid || !paymentMode) {
-      toast.error("Fill all payment details.");
+    // Client-side validation
+    if (!selectedStudentId) {
+      toast.error("Please select a student.");
       return;
     }
 
-    // Check if dues data is loaded
+    const amtNum = parseFloat(amountPaid as unknown as string);
+    if (isNaN(amtNum) || amtNum <= 0) {
+      toast.error("Enter a valid amount greater than 0.");
+      return;
+    }
+
     if (!dues) {
-      toast.error("Dues data not loaded. Cannot process payment.");
+      toast.error("Dues not loaded. Please reload student dues.");
+      return;
+    }
+
+    const balanceNum = parseFloat(dues.balance_due || "0");
+    if (amtNum > balanceNum) {
+      // Optional: allow overpayment if your backend supports it; otherwise block
+      toast.error(`Amount exceeds balance due (₹${balanceNum}).`);
       return;
     }
 
     setIsSubmitting(true);
+
     try {
-      const params = new URLSearchParams();
-      params.append("student_id", selectedStudentId);
-      params.append("amount_paid", amountPaid);
-      params.append("payment_mode", paymentMode);
+      // Build JSON payload — use the exact keys your backend expects.
+      // If backend expects different names (studentId vs student_id), change them here.
+      const payload = {
+        student_id: selectedStudentId, // or studentId
+        amount_paid: amtNum, // numeric
+        payment_mode: paymentMode,
+        // add any other fields required by your API, e.g. receipt_no, collected_by, class_id...
+      };
 
-      const res = await axios.post(`${API_BASE}`, params, {
+      const res = await axios.post(API_BASE, payload, {
         withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      console.log("payment record ", res);
 
+      console.log("payment record", res?.data);
       toast.success("Payment recorded successfully!");
 
-      // --- Calculate new totals for the receipt ---
-      const currentAmountPaidNum = parseFloat(amountPaid) || 0;
-      const oldTotalPaidNum = parseFloat(dues.total_paid) || 0;
-      const oldBalanceDueNum = parseFloat(dues.balance_due) || 0;
+      // Compute updated totals for receipt
+      const oldTotalPaidNum = parseFloat(dues.total_paid || "0");
+      const oldBalanceDueNum = parseFloat(dues.balance_due || "0");
 
-      const newTotalFeesPaid = oldTotalPaidNum + currentAmountPaidNum;
-      const newTotalDues = oldBalanceDueNum - currentAmountPaidNum;
-      // --- End calculation ---
+      const newTotalFeesPaid = oldTotalPaidNum + amtNum;
+      const newTotalDues = Math.max(0, oldBalanceDueNum - amtNum);
 
-      // Prepare receipt data
+      // Build receipt using server response where possible
       const student = students.find((s) => String(s.id) === selectedStudentId);
       const receipt: PaymentData = {
-        studentName: student?.display_name.split(" - ")[0] || "",
-        className: student?.display_name.split(" - ")[1] || "",
-        receiptNo: `INV-${res.data.payment.id}-${new Date().getFullYear()}`,
+        studentName: (student?.display_name || "").split(" - ")[0] || "",
+        className: (student?.display_name || "").split(" - ")[1] || "",
+        receiptNo: res?.data?.payment?.id
+          ? `INV-${res.data.payment.id}-${new Date().getFullYear()}`
+          : `INV-${Math.floor(
+              Math.random() * 100000
+            )}-${new Date().getFullYear()}`,
         paymentDate: new Date().toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "short",
           year: "numeric",
         }),
         paymentMode,
-        // This part shows what is being paid *in this transaction*
-        feeDetails: [
-          {
-            description: "Fee Payment",
-            amount: currentAmountPaidNum,
-          },
-        ],
-        // Pass the new cumulative totals to the receipt
+        feeDetails: [{ description: "Fee Payment", amount: amtNum }],
         totalFeesPaid: newTotalFeesPaid,
         totalDues: newTotalDues,
       };
@@ -180,11 +200,22 @@ export function CollectFee() {
       setPaymentData(receipt);
       setShowReceipt(true);
 
-      // Refresh dues after payment
-      fetchDues(selectedStudentId);
-    } catch (err) {
+      // Refresh dues from server
+      await fetchDues(selectedStudentId);
+    } catch (err: any) {
       console.error("Record Payment Error:", err);
-      toast.error("Failed to record payment.");
+
+      // Give the user the server's validation message if available
+      if (axios.isAxiosError(err) && err.response) {
+        const serverMsg =
+          err.response.data?.error ||
+          err.response.data?.message ||
+          JSON.stringify(err.response.data);
+        toast.error(`Failed to record payment: ${serverMsg}`);
+        console.warn("Server response:", err.response.data);
+      } else {
+        toast.error("Failed to record payment. Check your network/backend.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -217,19 +248,47 @@ export function CollectFee() {
         <CardContent>
           <div className="space-y-2 mb-6">
             <Label>Select Student</Label>
+
             <Select
               onValueChange={setSelectedStudentId}
               value={selectedStudentId}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Search by student name or admission ID..." />
+                <SelectValue placeholder="Search by student name or GR No..." />
               </SelectTrigger>
+
               <SelectContent>
-                {students.map((s) => (
+                {/* 🔍 Search Bar */}
+                <div className="px-2 py-1">
+                  <Input
+                    placeholder="Search..."
+                    className="h-8"
+                    onChange={(e) => {
+                      const keyword = e.target.value.toLowerCase();
+                      const filtered = students.filter((s) =>
+                        s.display_name.toLowerCase().includes(keyword)
+                      );
+                      setFilteredStudents(filtered);
+                    }}
+                  />
+                </div>
+
+                {/* Student List */}
+                {(filteredStudents.length > 0
+                  ? filteredStudents
+                  : students
+                ).map((s) => (
                   <SelectItem key={s.id} value={String(s.id)}>
                     {s.display_name}
                   </SelectItem>
                 ))}
+
+                {/* No results */}
+                {filteredStudents.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-2">
+                    No students found.
+                  </p>
+                )}
               </SelectContent>
             </Select>
           </div>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -46,7 +47,7 @@ interface Faculty {
 }
 
 export function ViewStaffList() {
-  // --- Form State ---
+  // --- Form State (kept in local state for edit actions) ---
   const [, setFName] = useState<string>("");
   const [, setLName] = useState<string>("");
   const [, setEmail] = useState<string>("");
@@ -63,6 +64,9 @@ export function ViewStaffList() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [facultyToDelete, setFacultyToDelete] = useState<Faculty | null>(null);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
   // --- API Calls ---
   const fetchFaculty = async () => {
     try {
@@ -70,7 +74,7 @@ export function ViewStaffList() {
         `${process.env.NEXT_PUBLIC_API_URL}/faculty_register`,
         { withCredentials: true }
       );
-      setFacultyList(response.data);
+      setFacultyList(response.data || []);
     } catch (error) {
       console.error("Error fetching faculty list:", error);
       toast.error("Could not fetch faculty list.");
@@ -122,16 +126,41 @@ export function ViewStaffList() {
     }
   };
 
+  // --- Filtered list using searchQuery ---
+  const filteredFaculty = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return facultyList;
+
+    return facultyList.filter((f) => {
+      const fullName = `${f.f_name} ${f.l_name}`.toLowerCase();
+      const email = (f.email || "").toLowerCase();
+      const role = (f.role || "").toLowerCase();
+      return fullName.includes(q) || email.includes(q) || role.includes(q);
+    });
+  }, [facultyList, searchQuery]);
+
   return (
     <div className="space-y-8">
       {/* Faculty List Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Registered Staff</CardTitle>
-          <CardDescription>
-            A list of all staff members currently in the system.
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle>Registered Staff</CardTitle>
+            <CardDescription>
+              A list of all staff members currently in the system.
+            </CardDescription>
+          </div>
+
+          {/* Search input */}
+          <div className="w-full sm:w-1/3">
+            <Input
+              placeholder="Search by name, email or role..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </CardHeader>
+
         <CardContent>
           <Table>
             <TableHeader>
@@ -144,8 +173,8 @@ export function ViewStaffList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {facultyList.length > 0 ? (
-                facultyList.map((faculty) => (
+              {filteredFaculty.length > 0 ? (
+                filteredFaculty.map((faculty) => (
                   <TableRow key={faculty.id}>
                     <TableCell className="font-medium">
                       {faculty.f_name} {faculty.l_name}

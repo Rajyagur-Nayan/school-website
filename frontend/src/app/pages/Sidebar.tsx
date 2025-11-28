@@ -89,16 +89,16 @@ function Sidebar({
     const role = localStorage.getItem("user_role");
     const sessionToken = localStorage.getItem("token");
 
-    // prevent infinite loop: only redirect if you're NOT already on "/"
+    // preserve previous redirect behavior: only redirect if you're NOT already on "/"
     if (!role || !sessionToken) {
-      if (window.location.pathname !== "/") {
+      if (typeof window !== "undefined" && window.location.pathname !== "/") {
         window.location.replace("/");
       }
     } else {
       setUserRole(role);
       setToken(sessionToken);
     }
-  }, []); // ✅ remove [router]
+  }, []); // run once
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -108,21 +108,56 @@ function Sidebar({
     window.location.replace("/");
   };
 
-  // ✅ Conditional rendering AFTER all hooks
+  // pages where we want only logo + school name (no sidebar, no avatar)
   const hideSidebar =
     pathname === "/" || pathname === "/login" || pathname === "/admin/login";
+
+  // NOTE: menu items (unchanged)
+  const menuItems = teacherItems;
+
+  // --- Minimal top bar for hidden pages ---
   if (hideSidebar) {
-    return null;
+    return (
+      <>
+        {/* Minimal mobile header (logo + school name) */}
+        <div className="lg:hidden fixed top-0 left-0 w-full flex items-center justify-start px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-50">
+          <Link href="/home" className="flex items-center gap-3">
+            <Image
+              src="/school-logo.jpg"
+              alt="School Logo"
+              width={40}
+              height={40}
+              className="object-contain rounded"
+            />
+            <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+              SMV school Dwarka
+            </span>
+          </Link>
+        </div>
+
+        {/* Minimal desktop header (logo + school name) */}
+        <header className="hidden lg:flex items-center justify-start px-6 py-3 fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-40">
+          <Link href="/home" className="flex items-center gap-3">
+            <Image
+              src="/school-logo.jpg"
+              alt="School Logo"
+              width={40}
+              height={40}
+              className="object-contain rounded"
+            />
+            <span className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+              SMV school Dwarka
+            </span>
+          </Link>
+        </header>
+      </>
+    );
   }
 
-  // NOTE: previously you only rendered items when userRole === "parent" which will cause an empty sidebar
-  // Make menuItems configurable. For now we'll render parentItems for all roles — adjust logic as you need.
-  const menuItems = teacherItems; // always show teacher items (role logic removed)
-  // <-- change this if you want role-based menus
-
+  // --- Full header + sidebar for other pages ---
   return (
     <>
-      {/* ===== MOBILE TOP BAR (small screens): 3 buttons: notifications, avatar, menu ===== */}
+      {/* ===== MOBILE TOP BAR (small screens): avatar + menu toggle ===== */}
       <div className="lg:hidden fixed top-0 left-0 w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-50">
         <Link href="/home" className="flex items-center gap-3">
           <Image
@@ -138,7 +173,7 @@ function Sidebar({
         </Link>
 
         <div className="flex items-center gap-2">
-          {/* Avatar / Dropdown */}
+          {/* Avatar / Dropdown (only when token exists) */}
           {token && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -243,7 +278,6 @@ function Sidebar({
         </div>
       </header>
 
-      {/* ===== SIDEBAR ===== */}
       {/* ===== SIDEBAR ===== */}
       <aside
         onMouseEnter={() => setIsHoverOpen(true)}

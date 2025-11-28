@@ -271,7 +271,7 @@ export default function UploadPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>No</TableHead>
-                  <TableHead>Admission No.</TableHead>
+                  <TableHead>Gr No.</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Class ID</TableHead>
                   <TableHead>Date of Birth</TableHead>
@@ -311,7 +311,7 @@ export default function UploadPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>No</TableHead>
-                <TableHead>Admission No.</TableHead>
+                <TableHead>Gr No.</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Standard</TableHead>
                 <TableHead>Community</TableHead>

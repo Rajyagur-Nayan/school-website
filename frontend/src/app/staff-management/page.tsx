@@ -10,37 +10,7 @@ export default function StaffHomePage() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* Add New Staff Card */}
-      <Card className="hover:shadow-lg transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-medium">Add New Staff</CardTitle>
-          <UserPlus className="w-6 h-6 text-green-500" />
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Onboard a new teacher, administrator, or support staff member.
-          </p>
-          <Button onClick={() => router.push("/staff-management/add")}>
-            Go to Form
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* View Staff List Card */}
-      <Card className="hover:shadow-lg transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-medium">View Staff List</CardTitle>
-          <Users className="w-6 h-6 text-blue-500" />
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Browse, search, and manage the list of all active staff members.
-          </p>
-          <Button onClick={() => router.push("/staff-management/view")}>
-            View List
-          </Button>
-        </CardContent>
-      </Card>
 
       <Card className="hover:shadow-lg transition-shadow">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -55,6 +25,20 @@ export default function StaffHomePage() {
           </p>
           <Button onClick={() => router.push("/staff-management/add-excel")}>
             Add via Excel
+          </Button>
+        </CardContent>
+      </Card>
+      <Card className="hover:shadow-lg transition-shadow">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-medium">View Staff List</CardTitle>
+          <UserPlus className="w-6 h-6 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Browse, search, and manage the list of all active staff members.
+          </p>
+          <Button onClick={() => router.push("/staff-management/view")}>
+            View List
           </Button>
         </CardContent>
       </Card>

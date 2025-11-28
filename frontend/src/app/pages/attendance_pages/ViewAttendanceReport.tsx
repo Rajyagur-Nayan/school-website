@@ -34,7 +34,7 @@ import { Loader2, Search } from "lucide-react"; // --- 1. Import Loader2 and Sea
 
 interface AttendanceRecord {
   student_name: string;
-  admission_number: string;
+  gr_no: string;
   standard: string;
   division: string;
   attendance_date: string;
@@ -147,7 +147,7 @@ export function ViewAttendanceReport() {
   const filteredData = attendanceData.filter(
     (record) =>
       record.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.admission_number.toLowerCase().includes(searchTerm.toLowerCase())
+      record.gr_no.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -189,7 +189,7 @@ export function ViewAttendanceReport() {
 
           {/* Search Filter (NEW) */}
           <div>
-            <Label htmlFor="search-filter">Search Name or Admission No.</Label>
+            <Label htmlFor="search-filter">Search Name or Gr No.</Label>
             <div className="relative">
               <Input
                 id="search-filter"
@@ -221,7 +221,7 @@ export function ViewAttendanceReport() {
                 <TableRow>
                   <TableHead>No</TableHead>
                   <TableHead>Student Name</TableHead>
-                  <TableHead>Admission No.</TableHead>
+                  <TableHead>Gr No.</TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
@@ -232,14 +232,12 @@ export function ViewAttendanceReport() {
                 {/* --- 6. Use filteredData for map --- */}
                 {filteredData.length > 0 ? (
                   filteredData.map((record, i) => (
-                    <TableRow
-                      key={`${record.admission_number}-${record.attendance_date}`}
-                    >
+                    <TableRow key={`${record.gr_no}-${record.attendance_date}`}>
                       <TableCell className="font-medium">{i + 1}</TableCell>
                       <TableCell className="font-medium">
                         {record.student_name}
                       </TableCell>
-                      <TableCell>{record.admission_number}</TableCell>
+                      <TableCell>{record.gr_no}</TableCell>
                       <TableCell>
                         {record.standard} - {record.division}
                       </TableCell>

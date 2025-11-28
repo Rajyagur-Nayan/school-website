@@ -16,7 +16,7 @@ router.get("/class/:classId/students", async (req, res) => {
   const { classId } = req.params;
   try {
     const result = await pool.query(
-      `SELECT id, student_name, admission_number 
+      `SELECT id, student_name, gr_no 
              FROM student 
              WHERE class_id = $1 AND status = 'Active' 
              ORDER BY student_name`,
@@ -110,7 +110,7 @@ router.get("/", async (req, res) => {
   try {
     let query = `
             SELECT 
-                s.student_name, s.admission_number,
+                s.student_name, s.gr_no,
                 c.standard, c.division,
                 da.attendance_date, da.status, da.remarks
             FROM daily_attendance da

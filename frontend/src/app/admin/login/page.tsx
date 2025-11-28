@@ -24,9 +24,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+const FIXED_ROLE = "teacher";
 
-// Type definition for the school/college data
 type College = {
   id: number;
   name: string;
@@ -35,24 +35,49 @@ type College = {
 export default function UnifiedLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
-  const [selectedSchool, setSelectedSchool] = useState("");
+  const [selectedSchool, setSelectedSchool] = useState<string>("");
   const [colleges, setColleges] = useState<College[]>([]);
   const [isFetchingSchools, setIsFetchingSchools] = useState(true);
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- Fetch Schools/Colleges on Load ---
+  // Fetch schools/colleges
   useEffect(() => {
     const fetchColleges = async () => {
       setIsFetchingSchools(true);
+      if (!BACKEND_URL) {
+        toast.error(
+          "Missing backend URL. Set NEXT_PUBLIC_API_URL in your env (local .env or Vercel)."
+        );
+        setIsFetchingSchools(false);
+        return;
+      }
+
       try {
-        const res = await axios.get(`${BACKEND_URL}/add_school`);
-        setColleges(res.data);
-      } catch (error) {
-        console.error("Failed to fetch colleges", error);
-        toast.error("Could not fetch school list.");
+        const res = await axios.get(`${BACKEND_URL}/add_school/`);
+        if (Array.isArray(res.data)) {
+          setColleges(res.data);
+          if (res.data.length === 0) {
+            toast.error("No schools found on the server.");
+          }
+        } else {
+          console.warn("Unexpected /add_school response shape:", res.data);
+          toast.error("Unexpected response from server when fetching schools.");
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch colleges", err);
+        if (axios.isAxiosError(err) && err.response) {
+          const msg =
+            err.response.status === 404
+              ? "School list endpoint returned 404. Check your backend route."
+              : `Failed to fetch schools: ${
+                  err.response.statusText || err.message
+                }`;
+          toast.error(msg);
+        } else {
+          toast.error("Could not fetch school list. Check network/backend.");
+        }
       } finally {
         setIsFetchingSchools(false);
       }
@@ -71,21 +96,15 @@ export default function UnifiedLoginPage() {
       toast.error(msg);
       return;
     }
-    if (!role) {
-      const msg = "Please select your role.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
 
     setIsLoading(true);
 
-    const endpoint = role === "admin" ? "/login_school" : "/login_school";
+    const endpoint = "/login_school"; // unified endpoint
     const payload = {
       email,
       password,
-      role,
       schoolId: selectedSchool,
+      role: FIXED_ROLE, // role fixed to "teacher"
     };
 
     try {
@@ -93,32 +112,38 @@ export default function UnifiedLoginPage() {
         withCredentials: true,
       });
 
-      console.log(response);
+      const data = response.data ?? {};
+      console.log(data);
 
+      // Try to detect role from backend; fallback to FIXED_ROLE when missing
       const userRole =
-        response.data?.admin?.role || response.data?.college?.role;
-      const token = response.data?.token;
-      const class_id = response.data?.class_id;
-      if (userRole && token) {
-        localStorage.setItem("class_id", class_id);
-        localStorage.setItem("user_role", userRole);
-        localStorage.setItem("token", token); // ✅ Store token in localStorage
+        data?.admin?.role || data?.college?.role || data?.role || FIXED_ROLE;
+      const token = data?.token ?? null;
+      const class_id = data?.class_id ?? null;
+
+      if (token) {
+        if (class_id) localStorage.setItem("class_id", String(class_id));
+        if (userRole) localStorage.setItem("user_role", userRole);
+        localStorage.setItem("token", token);
         toast.success("Login successful!");
 
+        // Redirect based on role if present and admin, otherwise to /home
         const redirectUrl = userRole === "admin" ? "/admin-dashboard" : "/home";
-
-        // ✅ Give localStorage time to persist before redirecting
         setTimeout(() => {
-          window.location.replace(redirectUrl); // use replace to avoid back-button loop
-        }, 300);
+          window.location.replace(redirectUrl);
+        }, 200);
       } else {
-        const msg = "Login successful, but no role returned from server.";
+        const msg = "Login response didn't include a token.";
         toast.error(msg);
         setError(msg);
       }
     } catch (err: any) {
+      console.error("Login error:", err);
       if (axios.isAxiosError(err) && err.response) {
-        const errorMsg = err.response.data.error || "Login failed.";
+        const errorMsg =
+          err.response.data?.error ||
+          err.response.statusText ||
+          "Login failed.";
         toast.error(errorMsg);
         setError(errorMsg);
       } else {
@@ -126,7 +151,6 @@ export default function UnifiedLoginPage() {
         toast.error(errorMsg);
         setError(errorMsg);
       }
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +169,7 @@ export default function UnifiedLoginPage() {
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* --- School Dropdown --- */}
+            {/* School Dropdown */}
             <div className="space-y-2">
               <Label
                 htmlFor="school-select"
@@ -171,37 +195,22 @@ export default function UnifiedLoginPage() {
                   />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                  {colleges.map((college) => (
-                    <SelectItem key={college.id} value={String(college.id)}>
-                      {college.name}
+                  {colleges.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      {isFetchingSchools ? "Loading..." : "No schools found"}
                     </SelectItem>
-                  ))}
+                  ) : (
+                    colleges.map((college) => (
+                      <SelectItem key={college.id} value={String(college.id)}>
+                        {college.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* --- Role Dropdown --- */}
-            <div className="space-y-2">
-              <Label
-                htmlFor="role-select"
-                className="text-gray-700 dark:text-gray-300"
-              >
-                I am a
-              </Label>
-              <Select onValueChange={setRole} value={role}>
-                <SelectTrigger
-                  id="role-select"
-                  className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
-                >
-                  <SelectValue placeholder="Select your role..." />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Email Field */}
+            {/* Email */}
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -220,7 +229,7 @@ export default function UnifiedLoginPage() {
               />
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div className="space-y-2">
               <Label
                 htmlFor="password"
@@ -242,7 +251,7 @@ export default function UnifiedLoginPage() {
             {/* Forgot Password */}
             <div className="text-right">
               <Link
-                href="/forgot-password"
+                href="/"
                 className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
               >
                 Forgot password?
@@ -255,7 +264,7 @@ export default function UnifiedLoginPage() {
               </p>
             )}
 
-            {/* Submit Button */}
+            {/* Submit */}
             <Button
               type="submit"
               className="w-full bg-gray-900 hover:bg-gray-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white transition-colors duration-300"

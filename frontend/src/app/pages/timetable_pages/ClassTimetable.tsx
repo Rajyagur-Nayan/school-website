@@ -1,4 +1,3 @@
-// components/ClassTimetable.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -57,7 +56,6 @@ const WEEK_DAYS = [
   "Saturday",
 ];
 
-// color palette for timetable blocks
 const colorPalette = [
   "bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200",
   "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
@@ -92,8 +90,9 @@ interface TimetableEntry {
   subject_name: string;
   f_name: string;
   l_name: string;
-  id?: number; // may be present when fetched from add_slot endpoints
-  period_id?: number; // id for the slot record
+  id?: number;
+  timetable_id?: number;
+  period_id?: number;
   subject_id?: number;
   faculty_id?: number;
   class_id?: number;
@@ -107,17 +106,15 @@ interface FacultyScheduleEntry {
   id?: number;
 }
 
-// cell data for UI
 interface TimetableCellData {
   content: React.ReactNode;
   color?: string;
-  meta?: any; // keep original entry for edit/delete
+  meta?: any;
 }
 interface FormattedTimetable {
   [day: string]: { [period: number]: TimetableCellData };
 }
 
-// small spinner component
 const LoadingSpinner = ({ text }: { text: string }) => (
   <div className="flex flex-col items-center justify-center text-muted-foreground py-10 space-y-2">
     <Loader2 className="h-8 w-8 animate-spin" />
@@ -125,7 +122,6 @@ const LoadingSpinner = ({ text }: { text: string }) => (
   </div>
 );
 
-// Timetable renderer (keeps same look) - now accepts onEdit/onDelete
 const TimetableDisplay = ({
   timetable,
   periods,
@@ -165,11 +161,7 @@ const TimetableDisplay = ({
               key={period}
               className="border-b last:border-b-0 dark:border-gray-700"
             >
-              <TableCell
-                className="font-semibold text-center align-middle
-                           bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300
-                           border-r dark:border-gray-700"
-              >
+              <TableCell className="font-semibold text-center align-middle bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-r dark:border-gray-700">
                 {`P${period}`}
               </TableCell>
 
@@ -184,10 +176,8 @@ const TimetableDisplay = ({
                   >
                     {cellData ? (
                       <div className="p-2 h-full flex flex-col justify-center relative">
-                        {/* Main content */}
                         {cellData.content}
 
-                        {/* Edit/Delete buttons top-right */}
                         <div className="absolute top-1 right-1 flex gap-1">
                           {onEdit && (
                             <button
@@ -228,20 +218,17 @@ const TimetableDisplay = ({
 export function ClassTimetable() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-  // common
   const [classes, setClasses] = useState<Class[]>([]);
   const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // class-wise state
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [classTimetable, setClassTimetable] = useState<FormattedTimetable>({});
   const [classPeriods, setClassPeriods] = useState<number[]>([]);
   const [isClassLoading, setIsClassLoading] = useState(false);
   const [classError, setClassError] = useState<string | null>(null);
 
-  // teacher-wise state
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null
   );
@@ -252,7 +239,6 @@ export function ClassTimetable() {
   const [isFacultyLoading, setIsFacultyLoading] = useState(false);
   const [facultyError, setFacultyError] = useState<string | null>(null);
 
-  // Edit dialog state
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<{
     id: number;
@@ -264,11 +250,9 @@ export function ClassTimetable() {
     period_number?: number;
   } | null>(null);
 
-  // Delete dialog state
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
 
-  // --- Helper: fetch initial form data (classes, faculty, subjects) ---
   useEffect(() => {
     const fetchFormData = async () => {
       setIsInitialLoading(true);
@@ -287,10 +271,8 @@ export function ClassTimetable() {
       }
     };
     fetchFormData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [API_URL]);
 
-  // --- fetch functions (extracted so we can call them after update/delete) ---
   const fetchClassTimetable = async (classId: string | null) => {
     if (!classId) {
       setClassTimetable({});
@@ -306,6 +288,9 @@ export function ClassTimetable() {
         { withCredentials: true }
       );
 
+      // ADD THIS to inspect the exact shape
+      console.log("[Timetable] GET /timetable/class res.data:", res.data);
+
       const uniquePeriods: number[] = [
         ...new Set(res.data.map((e) => e.period_number)),
       ].sort((a, b) => a - b);
@@ -316,11 +301,27 @@ export function ClassTimetable() {
 
       res.data.forEach((entry) => {
         if (!formatted[entry.day]) formatted[entry.day] = {};
+
         if (!assignedColors[entry.subject_name]) {
           assignedColors[entry.subject_name] =
             colorPalette[colorIndex % colorPalette.length];
           colorIndex++;
         }
+
+        // Use timetable_id returned by the backend as the canonical slot id
+        const slotId = entry.timetable_id ?? entry.id ?? null;
+
+        const meta = {
+          id: slotId, // <- critical: used for /add_slot/:id
+          timetable_id: entry.timetable_id, // keep original name accessible too
+          period_id: entry.period_id ?? entry.period_number ?? null,
+          period_number: entry.period_number ?? null,
+          class_id: entry.class_id ?? Number(classId),
+          subject_id: entry.subject_id ?? null,
+          faculty_id: entry.faculty_id ?? null,
+          day: entry.day,
+        };
+
         formatted[entry.day][entry.period_number] = {
           content: (
             <div className="text-center">
@@ -333,7 +334,7 @@ export function ClassTimetable() {
             </div>
           ),
           color: assignedColors[entry.subject_name],
-          meta: entry, // <-- attach entry so edit/delete buttons work
+          meta,
         };
       });
 
@@ -393,7 +394,7 @@ export function ClassTimetable() {
             </div>
           ),
           color: assignedColors[entry.subject_name],
-          meta: entry, // attach entry (may be lighter than class entry)
+          meta: entry,
         };
       });
 
@@ -411,20 +412,14 @@ export function ClassTimetable() {
     }
   };
 
-  // useEffects to call the fetchers when selection changes
   useEffect(() => {
     fetchClassTimetable(selectedClassId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClassId]);
 
   useEffect(() => {
     fetchFacultyTimetable(selectedFacultyId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFacultyId]);
 
-  // Helper: check for duplicate by period_id only (client-side)
-  // NOTE: This function checks only period_id values in the loaded classTimetable,
-  // and ignores class_id entirely (per your requirement).
   const checkDuplicatePeriod = async (
     period_id: number,
     ignoreId?: number | null
@@ -437,10 +432,7 @@ export function ClassTimetable() {
           const meta = cell?.meta;
           if (!meta) continue;
 
-          // determine the stored period identifier for the slot
-          // meta may contain period_id or period_number depending on API shape
           const metaPeriodId = meta.period_id ?? meta.period_number ?? null;
-          // determine the stored row id used for routes (could be meta.id or meta.period_id)
           const metaRowId = meta.id ?? meta.period_id ?? null;
 
           if (
@@ -448,62 +440,46 @@ export function ClassTimetable() {
             Number(metaPeriodId) === Number(period_id) &&
             (ignoreId == null || Number(metaRowId) !== Number(ignoreId))
           ) {
-            // found another slot using the same period_id
             return true;
           }
         }
       }
       return false;
     } catch (err) {
-      // be conservative: return false and let server handle final validation
       return false;
     }
   };
 
-  // ------- PATCH (update) handler for a timetable entry -------
-  // ------- PATCH (update) handler for a timetable entry -------
-  // payload.id is still preferred (DB row id). If server replies 404 we retry using period_id.
   const handleUpdateSlot = async (payload: {
     id: number;
     period_id: number;
+    class_id: number;
     subject_id: number | null;
     faculty_id: number | null;
   }) => {
     const tryPatch = async (targetId: number | string) => {
       const url = `${API_URL}/add_slot/${targetId}`;
+
       const params = new URLSearchParams();
       params.append("period_id", String(payload.period_id));
+      params.append("class_id", String(payload.class_id)); // required by backend
       if (payload.subject_id !== null && payload.subject_id !== undefined)
         params.append("subject_id", String(payload.subject_id));
       if (payload.faculty_id !== null && payload.faculty_id !== undefined)
         params.append("faculty_id", String(payload.faculty_id));
 
-      console.log("[Timetable] PATCH", {
-        url,
-        body: Object.fromEntries(params),
-      });
+      console.log("[Timetable] PATCH ->", url);
+      console.log("[Timetable] payload:", Object.fromEntries(params));
 
-      try {
-        const res = await axios.patch(url, params, {
-          withCredentials: true,
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        });
-        console.log("[Timetable] PATCH success", res.data);
-        return res;
-      } catch (err: any) {
-        console.error("[Timetable] PATCH failed", {
-          url,
-          status: err?.response?.status,
-          data: err?.response?.data,
-          message: err?.message,
-        });
-        throw err;
-      }
+      const res = await axios.patch(url, params.toString(), {
+        withCredentials: true,
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      return res;
     };
 
     try {
-      // first try with payload.id (most common)
-      const res = await tryPatch(payload.id);
+      const res = await tryPatch(payload.id); // <-- use slot id
       toast.success("Timetable entry updated successfully.");
       if (selectedClassId) await fetchClassTimetable(selectedClassId);
       if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
@@ -511,58 +487,58 @@ export function ClassTimetable() {
       setEditingEntry(null);
       return res.data;
     } catch (err: any) {
-      // If 404, retry once with period_id (some backends expect that)
+      // fallback: if backend responds 404 for slot id, try with period_id
       if (err?.response?.status === 404 && payload.period_id) {
         try {
           console.warn(
-            "[Timetable] Original PATCH returned 404 — retrying with period_id..."
+            "PATCH by slot id returned 404 — retrying with period_id..."
           );
           const res2 = await tryPatch(payload.period_id);
-          toast.success(
-            "Timetable entry updated successfully (using period_id)."
-          );
+          toast.success("Timetable entry updated (using period_id).");
           if (selectedClassId) await fetchClassTimetable(selectedClassId);
           if (selectedFacultyId) await fetchFacultyTimetable(selectedFacultyId);
           setIsEditOpen(false);
           setEditingEntry(null);
           return res2.data;
         } catch (err2: any) {
-          const backendMsg =
-            err2?.response?.data?.error || err2?.response?.data?.message;
-          toast.error(backendMsg || "Failed to update timetable entry.");
+          toast.error(
+            err2?.response?.data?.error || "Failed to update timetable entry."
+          );
           return null;
         }
       }
 
-      // otherwise show backend message if available
-      const backendMsg =
-        err?.response?.data?.error || err?.response?.data?.message;
-      if (backendMsg) {
-        toast.error(backendMsg);
-      } else {
-        toast.error("Failed to update timetable entry.");
-      }
+      toast.error(
+        err?.response?.data?.error || "Failed to update timetable entry."
+      );
       return null;
     }
   };
 
-  // ------- DELETE handler for a timetable entry -------
-  // Try delete by id, if 404 then retry with period_id (safe fallback)
   const handleDeleteSlot = async (id: number, fallbackPeriodId?: number) => {
     const tryDelete = async (targetId: number | string) => {
       const url = `${API_URL}/add_slot/${targetId}`;
-      console.log("[Timetable] DELETE", { url });
+      console.log("[Timetable] DELETE ->", url);
       try {
-        const res = await axios.delete(url, { withCredentials: true });
-        console.log("[Timetable] DELETE success", res.data);
+        const res = await axios.delete(url, {
+          withCredentials: true,
+          timeout: 15000,
+        });
+        console.log("[Timetable] DELETE success:", res.status, res.data);
         return res;
       } catch (err: any) {
-        console.error("[Timetable] DELETE failed", {
-          url,
-          status: err?.response?.status,
-          data: err?.response?.data,
-          message: err?.message,
-        });
+        console.error("[Timetable] DELETE failed:", err);
+        if (err?.response) {
+          console.error(
+            "[Timetable] err.response.status:",
+            err.response.status
+          );
+          console.error("[Timetable] err.response.data:", err.response.data);
+        } else {
+          console.error(
+            "[Timetable] No response from server — possible Network/CORS."
+          );
+        }
         throw err;
       }
     };
@@ -578,7 +554,7 @@ export function ClassTimetable() {
       if (err?.response?.status === 404 && fallbackPeriodId) {
         try {
           console.warn(
-            "[Timetable] Original DELETE returned 404 — retrying with period_id..."
+            "[Timetable] DELETE by id returned 404 — retrying with period_id..."
           );
           await tryDelete(fallbackPeriodId);
           toast.success(
@@ -596,36 +572,40 @@ export function ClassTimetable() {
           return;
         }
       }
-
       const backendMsg =
         err?.response?.data?.error || err?.response?.data?.message;
       toast.error(backendMsg || "Failed to delete timetable entry.");
     }
   };
 
-  // ---------- New: handlers passed into TimetableDisplay ----------
   const handleCellEdit = (meta: any) => {
-    // meta may be TimetableEntry from class timetable or faculty schedule entry.
-    // attempt to populate editingEntry fields safely:
-    const id = meta?.id ?? meta?.period_id ?? null;
-    if (!id) {
-      toast.error("Unable to determine entry id for editing.");
+    console.log("[Timetable] handleCellEdit meta:", meta);
+
+    // Prefer timetable_id, fall back to id if present
+    const slotId = meta?.timetable_id ?? meta?.id ?? null;
+    if (!slotId) {
+      console.error(
+        "[Timetable] Cannot edit: timetable_id not found in meta",
+        meta
+      );
+      toast.error("Unable to determine slot id for editing.");
       return;
     }
 
-    const periodId = meta.period_id ?? meta.period_number ?? 0;
+    const periodId = meta?.period_id ?? meta?.period_number ?? 0;
     const classId =
-      meta.class_id ?? (selectedClassId ? Number(selectedClassId) : 0);
+      meta?.class_id ?? (selectedClassId ? Number(selectedClassId) : 0);
 
     setEditingEntry({
-      id: Number(id),
+      id: Number(slotId), // <- this will be used for /add_slot/:timetable_id
       period_id: Number(periodId),
       class_id: Number(classId),
-      subject_id: meta.subject_id ?? undefined,
-      faculty_id: meta.faculty_id ?? undefined,
-      day: meta.day,
-      period_number: meta.period_number,
+      subject_id: meta?.subject_id ?? undefined,
+      faculty_id: meta?.faculty_id ?? undefined,
+      day: meta?.day,
+      period_number: meta?.period_number,
     });
+
     setIsEditOpen(true);
   };
 
@@ -636,11 +616,10 @@ export function ClassTimetable() {
       return;
     }
     setDeletingEntryId(Number(id));
+    // keep editingEntry.period_id available as fallback if present
     setIsDeleteOpen(true);
   };
-  // ----------------------------------------------------------------
 
-  // --- UI: If initial loading
   if (isInitialLoading) {
     return (
       <Card>
@@ -674,14 +653,11 @@ export function ClassTimetable() {
             <TabsTrigger value="teacher-wise">Teacher-wise</TabsTrigger>
           </TabsList>
 
-          {/* CLASS-WISE */}
           <TabsContent value="class-wise" className="mt-0 pt-4">
             <div className="mb-4">
               <Label htmlFor="class-select">Select Class</Label>
               <Select
-                onValueChange={(v) => {
-                  setSelectedClassId(v || null);
-                }}
+                onValueChange={(v) => setSelectedClassId(v || null)}
                 disabled={classes.length === 0}
               >
                 <SelectTrigger
@@ -722,14 +698,12 @@ export function ClassTimetable() {
               )}
 
             {!isClassLoading && !classError && selectedClassId && (
-              <>
-                <TimetableDisplay
-                  timetable={classTimetable}
-                  periods={classPeriods}
-                  onEdit={handleCellEdit}
-                  onDelete={handleCellDelete}
-                />
-              </>
+              <TimetableDisplay
+                timetable={classTimetable}
+                periods={classPeriods}
+                onEdit={handleCellEdit}
+                onDelete={handleCellDelete}
+              />
             )}
 
             {!selectedClassId && !isClassLoading && !classError && (
@@ -739,14 +713,11 @@ export function ClassTimetable() {
             )}
           </TabsContent>
 
-          {/* TEACHER-WISE */}
           <TabsContent value="teacher-wise" className="mt-0 pt-4">
             <div className="mb-4">
               <Label htmlFor="teacher-select">Select Teacher</Label>
               <Select
-                onValueChange={(v) => {
-                  setSelectedFacultyId(v || null);
-                }}
+                onValueChange={(v) => setSelectedFacultyId(v || null)}
                 disabled={faculty.length === 0}
               >
                 <SelectTrigger
@@ -803,7 +774,6 @@ export function ClassTimetable() {
         </Tabs>
       </CardContent>
 
-      {/* ----------------- Edit Dialog ----------------- */}
       <Dialog
         open={isEditOpen}
         onOpenChange={(open) => !open && setIsEditOpen(false)}
@@ -815,7 +785,6 @@ export function ClassTimetable() {
 
           {editingEntry ? (
             <div className="space-y-4 py-2">
-              {/* Period (select) */}
               <div>
                 <Label>Period (numeric)</Label>
                 <Input
@@ -831,7 +800,6 @@ export function ClassTimetable() {
                 />
               </div>
 
-              {/* Class select */}
               <div>
                 <Label>Class</Label>
                 <Select
@@ -855,7 +823,6 @@ export function ClassTimetable() {
                 </Select>
               </div>
 
-              {/* Subject select */}
               <div>
                 <Label>Subject</Label>
                 <Select
@@ -883,7 +850,6 @@ export function ClassTimetable() {
                 </Select>
               </div>
 
-              {/* Faculty select */}
               <div>
                 <Label>Faculty</Label>
                 <Select
@@ -923,30 +889,25 @@ export function ClassTimetable() {
                 </Button>
                 <Button
                   onClick={async () => {
-                    if (!editingEntry) return;
-                    // call update using the entry id (this will hit /add_slot/:id)
+                    if (!editingEntry) return; // TS + runtime safety
+
                     await handleUpdateSlot({
-                      id: editingEntry.id,
+                      id: editingEntry.id, // timetable_id used in the URL
                       period_id: editingEntry.period_id,
-                      subject_id:
-                        editingEntry.subject_id !== undefined
-                          ? editingEntry.subject_id
-                          : null,
-                      faculty_id:
-                        editingEntry.faculty_id !== undefined
-                          ? editingEntry.faculty_id
-                          : null,
+                      class_id: editingEntry.class_id, // required by backend
+                      subject_id: editingEntry.subject_id ?? null,
+                      faculty_id: editingEntry.faculty_id ?? null,
                     });
                   }}
                 >
                   Save changes
                 </Button>
+
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    // open delete dialog with the actual id
                     if (!editingEntry) return;
-                    setDeletingEntryId(editingEntry.id);
+                    setDeletingEntryId(editingEntry.id); // timetable_id
                     setIsDeleteOpen(true);
                   }}
                 >
@@ -962,7 +923,6 @@ export function ClassTimetable() {
         </DialogContent>
       </Dialog>
 
-      {/* ----------------- Delete Confirmation ----------------- */}
       <AlertDialog
         open={isDeleteOpen}
         onOpenChange={(open) => !open && setIsDeleteOpen(false)}
@@ -982,10 +942,13 @@ export function ClassTimetable() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
-                if (deletingEntryId) {
-                  // DELETE uses id at /add_slot/:id
-                  await handleDeleteSlot(deletingEntryId);
+                const primary = deletingEntryId ?? editingEntry?.id;
+                if (!primary) {
+                  toast.error("Nothing to delete.");
+                  return;
                 }
+                const fallback = editingEntry?.period_id ?? undefined;
+                await handleDeleteSlot(primary, fallback); // handleDeleteSlot should try primary then fallback
               }}
             >
               Delete

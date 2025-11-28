@@ -15,6 +15,8 @@ app.use(
   cors({
     origin: [
       "https://school-website-nine-psi.vercel.app",
+      "https://admin-smv-topaz.vercel.app",
+      "https://student-smv.vercel.app",
       "http://localhost:3000",
     ], // your frontend URL
     credentials: true, // allow cookies
