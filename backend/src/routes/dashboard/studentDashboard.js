@@ -184,7 +184,7 @@ router.get("/:studentId/fees", getStudentInfo, async (req, res) => {
       balance_due: parseFloat(feeData.balance_due) || 0,
       status:
         parseFloat(feeData.balance_due) <= 0 &&
-        parseFloat(feeData.total_dues) > 0
+          parseFloat(feeData.total_dues) > 0
           ? "Paid"
           : "Due",
     });
@@ -404,7 +404,7 @@ router.get("/student-report/:studentId", async (req, res) => {
 
   try {
     client = await pool.connect();
-    
+
     const query = `
       WITH subject_stats AS (
         -- Step 1: Calculate performance per subject
@@ -435,10 +435,11 @@ router.get("/student-report/:studentId", async (req, res) => {
           END as overall_percentage
         FROM subject_stats
       )
-      -- Step 3: Combine both into a single JSON response
+      -- Step 3: Combine everything including STUDENT NAME into a single JSON
       SELECT 
         json_build_object(
           'student_id', $1::int,
+          'student_name', (SELECT student_name FROM student WHERE id = $1), -- <--- ADDED THIS LINE
           'overall', (SELECT row_to_json(overall_stats) FROM overall_stats),
           'subjects', (SELECT json_agg(subject_stats) FROM subject_stats)
         ) as report;
@@ -446,13 +447,17 @@ router.get("/student-report/:studentId", async (req, res) => {
 
     const { rows } = await client.query(query, [studentId]);
 
-    // If the student exists but has no exams, rows[0].report.subjects might be null.
-    // We handle that gracefully in the response.
     const report = rows[0]?.report || {};
-    
+
+    // Check if student exists (if name is null, the ID is invalid)
+    if (!report.student_name) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    // Handle case where student exists but has no exam data yet
     if (!report.subjects) {
-       report.subjects = [];
-       report.overall = { total_obtained: 0, total_possible: 0, overall_percentage: 0 };
+      report.subjects = [];
+      report.overall = { total_obtained: 0, total_possible: 0, overall_percentage: 0 };
     }
 
     res.status(200).json(report);
@@ -466,31 +471,51 @@ router.get("/student-report/:studentId", async (req, res) => {
 });
 
 router.get("/attendance/status", async (req, res) => {
-  const { studentId, date } = req.query; // getting data from URL params
+  const { studentId, date } = req.query; 
   let client;
-  
+
   if (!studentId || !date) {
     return res.status(400).json({ error: "Please provide studentId and date" });
   }
+
   try {
-  
     client = await pool.connect();
-    
+
     const query = `
-      SELECT status 
-      FROM daily_attendance 
-      WHERE student_id = $1 AND attendance_date = $2
+      SELECT 
+        s.student_name,
+        s.gr_no,
+        -- Combine standard and division (e.g., "10-A")
+        c.standard || '-' || c.division AS class_details,
+        da.status,
+        da.remarks
+      FROM student s
+      JOIN classes c ON s.class_id = c.id
+      -- LEFT JOIN ensures we get student details even if no attendance exists for this date
+      LEFT JOIN daily_attendance da ON s.id = da.student_id AND da.attendance_date = $2
+      WHERE s.id = $1
     `;
 
     const { rows } = await client.query(query, [studentId, date]);
 
-    if (rows.length > 0) {
-      // Case 1: Record found (Present, Absent, or Late)
-      res.status(200).json({ status: rows[0].status });
-    } else {
-      // Case 2: No record found for this specific date
-      res.status(200).json({ status: "No Data" });
+    if (rows.length === 0) {
+      // If no rows returned, the student_id itself is invalid
+      return res.status(404).json({ error: "Student not found" });
     }
+
+    const data = rows[0];
+
+    // Prepare the response
+    // If da.status is null (because of LEFT JOIN), it means attendance isn't marked yet.
+    const response = {
+      student_name: data.student_name,
+      gr_no: data.gr_no,
+      class: data.class_details,
+      status: data.status || "Not Marked", // Default if no record exists
+      remark: data.remarks || ""           // Default to empty string if null
+    };
+
+    res.status(200).json(response);
 
   } catch (err) {
     console.error("Get Attendance Status Error:", err);

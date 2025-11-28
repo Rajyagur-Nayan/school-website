@@ -24,7 +24,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.send("API is running 🚀");
 });
-
+app.use("/signup", require("./src/routes/user/signup.js"));
+app.use("/login", require("./src/routes/user/login.js"));
+app.use("/profile", require("./src/routes/user/profile.js"));
 app.use("/faculty_register", require("./src/routes/faculty/register.js"));
 app.use("/add_class", require("./src/routes/addition/addClass.js"));
 app.use("/add_period", require("./src/routes/addition/addPeriod.js"));
@@ -75,4 +77,5 @@ setInterval(() => {
     .then(() => console.log('Pinged server to keep alive'))
     .catch(err => console.error('Ping failed', err));
 }, 10 * 60 * 1000); // Every 10 minutes
+
 module.exports = app;

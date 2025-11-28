@@ -106,7 +106,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
 -- This updated schema allows for NULL values in non-essential fields, perfect for bulk uploading.
-CREATE TABLE students (
+CREATE TABLE student (
     -- Core Student Information (still required)
     id SERIAL PRIMARY KEY,
     gr_no VARCHAR(50) UNIQUE NOT NULL,
