@@ -44,21 +44,21 @@ interface Student {
   student_name: string;
   admission_number?: string; // if available from API
 }
-interface StudentResult {
-  student_name: string;
-  exam_name: string;
+interface SubjectResponse {
   subject_name: string;
-  exam_date: string;
+  obtained?: number | null;
+  total?: number;
+  percentage?: number;
+}
+interface StudentResult {
+  subject_name: string;
   total_marks: number;
   marks_obtained: number | null;
-  result: string | null;
+  percentage: number;
 }
-// Type for the raw student response (grouped)
 interface GroupedStudentData {
   [key: string]: Student[];
 }
-
-// Optional: path to uploaded image from convo (available in environment)
 
 export function ViewResults() {
   // State for dropdown data
@@ -74,6 +74,12 @@ export function ViewResults() {
 
   // State for results and loading/error
   const [studentResults, setStudentResults] = useState<StudentResult[]>([]);
+  const [studentOverall, setStudentOverall] = useState<{
+    total_obtained: number;
+    total_possible: number;
+    overall_percentage: number;
+  } | null>(null);
+  const [studentName, setStudentName] = useState<string | null>(null); // NEW: name from API
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
@@ -107,6 +113,7 @@ export function ViewResults() {
     setStudentResults([]);
     setStudentSearchTerm("");
     setError(null);
+    setStudentName(null); // reset name when changing class
 
     if (selectedClassId) {
       const fetchStudents = async () => {
@@ -141,24 +148,76 @@ export function ViewResults() {
     }
   }, [selectedClassId]);
 
-  // 3. Fetch Results when a Student is selected
+  // 3. Fetch Results when a Student is selected (uses the new route)
   useEffect(() => {
     setStudentResults([]);
+    setStudentOverall(null);
     setError(null);
+    setStudentName(null); // clear previous name
 
     if (selectedStudentId) {
       const fetchResults = async () => {
         setIsLoadingResults(true);
         try {
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/mark_entry/student/${selectedStudentId}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/student_dashboard/student-report/${selectedStudentId}`,
             { withCredentials: true }
           );
-          setStudentResults(response.data || []);
+
+          const data = response.data || {};
+          console.log(data);
+
+          // Derive and set the student name from API (defensive)
+          const apiName =
+            (data.student_name as string) ||
+            (data.student?.name as string) ||
+            (data.student_name_full as string) ||
+            null;
+          // fallback to selected student's name if API doesn't provide one
+          const fallbackName =
+            students.find((s) => String(s.id) === selectedStudentId)
+              ?.student_name ?? null;
+          setStudentName(apiName ?? fallbackName);
+
+          // Map subjects -> StudentResult[]
+          const mappedResults: StudentResult[] =
+            Array.isArray(data.subjects) && data.subjects.length > 0
+              ? data.subjects.map((sub: SubjectResponse) => {
+                  const obtained =
+                    typeof sub.obtained === "number" ? sub.obtained : null;
+                  const total = typeof sub.total === "number" ? sub.total : 0;
+                  const perc =
+                    typeof sub.percentage === "number"
+                      ? sub.percentage
+                      : total > 0 && obtained !== null
+                      ? (obtained / total) * 100
+                      : 0;
+                  return {
+                    subject_name: sub.subject_name || "Unknown",
+                    total_marks: total,
+                    marks_obtained: obtained,
+                    percentage: Number(perc.toFixed(2)),
+                  };
+                })
+              : [];
+
+          setStudentResults(mappedResults);
+
+          // Set overall if provided
+          if (data.overall) {
+            // The API in screenshot used keys like total_obtained / total_possible / overall_percentage
+            setStudentOverall({
+              total_obtained: Number(data.overall.total_obtained ?? 0),
+              total_possible: Number(data.overall.total_possible ?? 0),
+              overall_percentage: Number(data.overall.overall_percentage ?? 0),
+            });
+          }
         } catch (err: any) {
           if (err.response?.status === 404) {
             toast.error("No results found for this student.");
             setStudentResults([]);
+            setStudentOverall(null);
+            setStudentName(null);
           } else {
             console.error("Failed to fetch student results:", err);
             toast.error("Could not load results for this student.");
@@ -170,18 +229,23 @@ export function ViewResults() {
       };
       fetchResults();
     }
-  }, [selectedStudentId]);
+  }, [selectedStudentId, students]);
 
   // --- Calculations based on fetched results ---
   const validResults = studentResults.filter((r) => r.marks_obtained !== null);
-  const totalMarksObtained = validResults.reduce(
+  const totalMarksObtainedComputed = validResults.reduce(
     (sum, item) => sum + (item.marks_obtained ?? 0),
     0
   );
-  const totalPossibleMarks = validResults.reduce(
+  const totalPossibleMarksComputed = validResults.reduce(
     (sum, item) => sum + item.total_marks,
     0
   );
+
+  const totalMarksObtained =
+    studentOverall?.total_obtained ?? totalMarksObtainedComputed;
+  const totalPossibleMarks =
+    studentOverall?.total_possible ?? totalPossibleMarksComputed;
   const percentage =
     totalPossibleMarks > 0
       ? ((totalMarksObtained / totalPossibleMarks) * 100).toFixed(2)
@@ -320,70 +384,147 @@ export function ViewResults() {
             </p>
           )}
 
+        {/* ===== NEW: Overall + Subject-wise presentation ===== */}
         {!isLoadingResults && studentResults.length > 0 && selectedStudent && (
-          <div className="border rounded-lg p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
-              <div>
-                <h3 className="text-xl font-bold">
-                  {selectedStudent.student_name}
-                </h3>
-                <p className="text-muted-foreground">
-                  Class {selectedClass?.standard}{" "}
-                  {selectedClass?.division || ""}
-                </p>
-                {studentResults.length > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Exam: {studentResults[0].exam_name}
-                  </p>
-                )}
+          <div className="space-y-6">
+            {/* Overall summary card */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="col-span-1 md:col-span-2 border rounded-lg p-4 bg-white shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold">
+                      {/* Prefer API-provided name, fallback to selectedStudent name */}
+                      {studentName ?? selectedStudent.student_name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Class {selectedClass?.standard}{" "}
+                      {selectedClass?.division || ""}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Exam Report</p>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">
+                      Total:{" "}
+                      <span className="font-semibold">
+                        {totalMarksObtained} / {totalPossibleMarks}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-2xl font-bold">{percentage}%</div>
+                    <div className="mt-2">
+                      <Badge
+                        variant={
+                          parseFloat(percentage) >= 40
+                            ? "default"
+                            : "destructive"
+                        }
+                        className="px-4 py-1 text-lg"
+                      >
+                        {parseFloat(percentage) >= 40 ? "PASS" : "FAIL"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional: small overall progress bar */}
+                <div className="mt-4">
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${Math.min(100, Number(percentage))}%`,
+                        background:
+                          parseFloat(percentage) >= 40
+                            ? "linear-gradient(90deg,#4ade80,#16a34a)"
+                            : "linear-gradient(90deg,#fca5a5,#ef4444)",
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <Badge
-                variant={
-                  parseFloat(percentage) >= 40 ? "default" : "destructive"
-                }
-                className="text-lg px-4 py-1"
-              >
-                {parseFloat(percentage) >= 40 ? "PASS" : "FAIL"}
-              </Badge>
+
+              {/* Small metadata card */}
+              <div className="border rounded-lg p-4 bg-white shadow-sm">
+                <div className="text-sm text-muted-foreground mb-1">
+                  Student Name
+                </div>
+                <div className="font-semibold">
+                  {/* show the student name (from API or fallback) */}
+                  {studentName ?? selectedStudent.student_name}
+                </div>
+
+                <div className="mt-4 text-sm text-muted-foreground mb-1">
+                  Status
+                </div>
+                <div>
+                  <Badge
+                    variant={
+                      parseFloat(percentage) >= 40 ? "secondary" : "destructive"
+                    }
+                    className="px-3 py-1"
+                  >
+                    {parseFloat(percentage) >= 40 ? "Passed" : "Failed"}
+                  </Badge>
+                </div>
+              </div>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Subject</TableHead>
-                  <TableHead className="text-right">Marks Obtained</TableHead>
-                  <TableHead className="text-right">Total Marks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {studentResults.map((r, index) => (
-                  <TableRow key={`${r.subject_name}-${r.exam_name}-${index}`}>
-                    <TableCell>{r.subject_name}</TableCell>
-                    <TableCell className="text-right">
-                      {r.marks_obtained ?? "Absent"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {r.total_marks}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+            {/* Subject wise cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {studentResults.map((s, i) => (
+                <div
+                  key={`${s.subject_name}-${i}`}
+                  className="border rounded-lg p-4 bg-white shadow-sm"
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold">{s.subject_name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Marks:{" "}
+                        <span className="font-medium">
+                          {s.marks_obtained ?? "Absent"} / {s.total_marks}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">
+                        Percent
+                      </div>
+                      <div className="font-bold">{s.percentage}%</div>
+                    </div>
+                  </div>
 
-              <TableFooter>
-                <TableRow className="bg-muted/50">
-                  <TableCell className="font-bold">Total</TableCell>
-                  <TableCell className="text-right font-bold" colSpan={2}>
-                    {totalMarksObtained} / {totalPossibleMarks}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-bold">Percentage</TableCell>
-                  <TableCell className="text-right font-bold" colSpan={2}>
-                    {percentage}%
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+                  {/* progress bar */}
+                  <div className="mt-3">
+                    <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-2 rounded-full"
+                        style={{
+                          width: `${Math.min(100, s.percentage)}%`,
+                          background:
+                            s.percentage >= 40
+                              ? "linear-gradient(90deg,#60a5fa,#3b82f6)"
+                              : "linear-gradient(90deg,#fca5a5,#f87171)",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* small footnote */}
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    {s.marks_obtained === null
+                      ? "Student marked absent for this subject."
+                      : s.percentage >= 75
+                      ? "Excellent performance"
+                      : s.percentage >= 50
+                      ? "Good"
+                      : s.percentage >= 40
+                      ? "Satisfactory"
+                      : "Needs improvement"}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
