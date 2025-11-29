@@ -525,4 +525,44 @@ router.get("/attendance/status", async (req, res) => {
   }
 });
 
+router.get("/attendance/monthly-report", async (req, res) => {
+  const { studentId, month, year } = req.query; 
+  let client;
+
+  // Validate inputs
+  if (!studentId || !month || !year) {
+    return res.status(400).json({ error: "Please provide studentId, month, and year" });
+  }
+
+  try {
+    client = await pool.connect();
+
+    const query = `
+      SELECT 
+        -- Format date as 'YYYY-MM-DD' for easy frontend parsing
+        TO_CHAR(attendance_date, 'YYYY-MM-DD') as date,
+        status,
+        remarks
+      FROM daily_attendance 
+      WHERE 
+        student_id = $1 
+        AND EXTRACT(MONTH FROM attendance_date) = $2 
+        AND EXTRACT(YEAR FROM attendance_date) = $3
+      ORDER BY attendance_date ASC
+    `;
+
+    const { rows } = await client.query(query, [studentId, month, year]);
+
+    // Return the list of days where attendance was marked.
+    // The frontend can assume any date missing from this list is "Not Marked" or a holiday.
+    res.status(200).json(rows);
+
+  } catch (err) {
+    console.error("Get Monthly Attendance Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    if (client) client.release();
+  }
+});
+
 module.exports = router;
